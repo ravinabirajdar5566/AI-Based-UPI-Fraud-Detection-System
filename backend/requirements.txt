@@ -1,0 +1,12 @@
+fastapi>=0.100
+uvicorn[standard]>=0.23
+pydantic>=2.0
+python-multipart>=0.0.6
+numpy
+pandas
+scikit-learn>=1.3
+joblib
+opencv-python-headless>=4.5.4
+# optional (Ethereum anchoring): web3
+# for running tests/test_api.py:
+httpx

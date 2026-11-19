@@ -1,0 +1,5 @@
+{
+  "_note": "Demo blacklists. In production these come from NPCI / bank fraud feeds and user reports.",
+  "vpas": ["refund.helpdesk@ybl", "kyc.update@paytm", "lottery.winner@okaxis", "cashback.claim@oksbi", "scammer123@upi"],
+  "domains": ["paytm-kyc-update.xyz", "phonepe-refund.top", "free-cashback-upi.click", "sbi-kyc-verify.icu"]
+}

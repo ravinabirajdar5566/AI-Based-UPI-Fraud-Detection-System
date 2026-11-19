@@ -1,0 +1,6 @@
+{
+  "_note": "Demo ranges use RFC 5737 documentation addresses. Replace with real threat-intel feeds (AbuseIPDB, Tor exit list, VPN ranges).",
+  "bad_ips": ["203.0.113.0/24"],
+  "tor_exit": ["198.51.100.0/24"],
+  "vpn_proxy": ["192.0.2.0/24"]
+}

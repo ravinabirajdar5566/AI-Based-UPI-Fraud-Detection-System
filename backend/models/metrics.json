@@ -1,0 +1,57 @@
+{
+  "results": [
+    {
+      "model": "LogisticRegression (baseline)",
+      "precision": 0.5831,
+      "recall": 0.7951,
+      "f1": 0.6728,
+      "roc_auc": 0.8978,
+      "pr_auc": 0.8111,
+      "confusion_matrix [[TN,FP],[FN,TP]]": [
+        [
+          13844,
+          419
+        ],
+        [
+          151,
+          586
+        ]
+      ]
+    },
+    {
+      "model": "RandomForest (used)",
+      "precision": 0.9493,
+      "recall": 0.7883,
+      "f1": 0.8614,
+      "roc_auc": 0.8919,
+      "pr_auc": 0.8155,
+      "confusion_matrix [[TN,FP],[FN,TP]]": [
+        [
+          14232,
+          31
+        ],
+        [
+          156,
+          581
+        ]
+      ]
+    }
+  ],
+  "feature_importance": {
+    "new_receiver": 0.2488,
+    "amount_ratio": 0.2354,
+    "receiver_reports": 0.1396,
+    "amount_log": 0.119,
+    "distance_km": 0.0614,
+    "network_risk": 0.0531,
+    "qr_risk": 0.0398,
+    "txn_last_hour": 0.0283,
+    "url_risk": 0.0249,
+    "new_device": 0.0224,
+    "hour": 0.02,
+    "is_night": 0.0063,
+    "sim_mismatch": 0.0009
+  },
+  "rows": 60000,
+  "fraud_rate": 0.0491
+}

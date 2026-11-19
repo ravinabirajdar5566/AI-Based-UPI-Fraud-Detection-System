@@ -1,0 +1,2101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UPI Shield - AI-Based UPI Fraud Detection & Secure Payment Verification</title>
+<meta name="theme-color" content="#07181b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2l11 4v9c0 7-4.600 12-11 15C9.600 27 5 22 5 15V6z' fill='%2334c3bd'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07181b;--p1:#0c2227;--p2:#112d33;--p3:#163940;--line:#1d3f45;--line2:#2a5860;
+  --tx:#e7f2ef;--mut:#86a7a4;--dim:#5c807d;
+  --go:#3ddc97;--hold:#f4b73e;--stop:#ff5a4a;--sig:#34c3bd;
+  --go-b:rgba(61,220,151,.14);--hold-b:rgba(244,183,62,.15);--stop-b:rgba(255,90,74,.15);
+  --d:"Bricolage Grotesque",system-ui,sans-serif;--b:"Instrument Sans",system-ui,sans-serif;
+  --m:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;--side:252px}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 var(--b);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--sig);outline-offset:2px}
+[hidden]{display:none!important}
+h1,h2,h3,h4{font-family:var(--d);margin:0;letter-spacing:-.01em}
+a{color:var(--sig);text-decoration:none}
+a:hover{text-decoration:underline}
+::selection{background:var(--sig);color:#032}
+
+/* Controls */
+label{display:block;font-size:13px;color:var(--mut);margin:12px 0 5px;font-weight:500}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line2);border-radius:8px;background:#06161a;color:var(--tx);transition:border-color .15s}
+input:hover,select:hover,textarea:hover{border-color:var(--dim)}
+input:focus,select:focus,textarea:focus{border-color:var(--sig);outline:none;box-shadow:0 0 0 3px rgba(52,195,189,.18)}
+textarea{min-height:64px;resize:vertical}
+input[type=checkbox]{width:auto;accent-color:var(--sig);cursor:pointer}
+input[type=range]{padding:0;accent-color:var(--sig);border:0;background:none;cursor:pointer}
+
+.btn{background:var(--sig);color:#032a2b;border:0;border-radius:8px;padding:9px 18px;font-weight:600;cursor:pointer;transition:transform .12s,filter .15s,opacity .15s;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:14px;white-space:nowrap}
+.btn:hover{filter:brightness(1.1)}.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.btn.ghost{background:none;color:var(--tx);border:1px solid var(--line2)}.btn.ghost:hover{border-color:var(--sig);color:var(--sig)}
+.btn.bad{background:var(--stop);color:#2a0600}.btn.ok{background:var(--go);color:#012}
+.btn.sm{padding:6px 12px;font-size:13px;border-radius:7px}
+.btn.lg{padding:12px 24px;font-size:15px;border-radius:9px}
+
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mut{color:var(--mut)}.sm{font-size:13px}.mono{font-family:var(--m);font-size:12px}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:3px 10px;font-weight:600;font-size:12px}
+.pill.go{background:var(--go-b);color:var(--go)}.pill.hold{background:var(--hold-b);color:var(--hold)}.pill.stop{background:var(--stop-b);color:var(--stop)}.pill.sig{background:rgba(52,195,189,.15);color:var(--sig)}.pill.grey{background:var(--p2);color:var(--mut)}
+.err{color:var(--stop);font-size:13px;margin:8px 0 0;min-height:1em}
+
+/* Auth View */
+#auth{min-height:100%;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(360px,.75fr)}
+.hero{padding:44px clamp(24px,5vw,72px);display:flex;flex-direction:column;justify-content:center;gap:24px;background:radial-gradient(1200px 500px at 20% -10%,#12444a 0,transparent 60%),var(--bg);border-right:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:11px;font:700 22px var(--d)}
+.hero h1{font-size:clamp(30px,4vw,52px);line-height:1.06;font-weight:800;max-width:16ch}
+.hero p.lead{color:var(--mut);max-width:48ch;font-size:16px;margin:0}
+.counters{display:flex;gap:32px;flex-wrap:wrap}.counters b{display:block;font:700 28px var(--d)}.counters span{color:var(--mut);font-size:13px}
+.authbox{display:flex;align-items:center;justify-content:center;padding:28px}
+.card{background:var(--p1);border:1px solid var(--line);border-radius:14px;padding:24px}
+.authbox .card{width:100%;max-width:420px;padding:28px}
+.seg{display:flex;background:#06161a;border:1px solid var(--line);border-radius:10px;padding:3px;margin-bottom:8px}
+.seg button{flex:1;border:0;background:none;padding:9px;border-radius:8px;cursor:pointer;color:var(--mut);font-weight:600}
+.seg button.on{background:var(--p2);color:var(--tx)}
+.demo{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;align-items:center;font-size:13px;color:var(--mut)}
+.demo button{border:1px dashed var(--line2);background:none;border-radius:99px;padding:4px 12px;cursor:pointer;color:var(--tx);font-size:13px}.demo button:hover{border-color:var(--sig)}
+
+/* App Shell */
+#app{display:grid;grid-template-columns:var(--side) minmax(0,1fr);min-height:100%}
+aside{background:var(--p1);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:3px;position:sticky;top:0;height:100vh;overflow-y:auto;z-index:60}
+aside .brand{padding:4px 10px 18px;font-size:19px}
+.nv{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:9px;border:0;background:none;width:100%;text-align:left;cursor:pointer;color:var(--mut);font-weight:500;transition:background .15s,color .15s;font-size:14px}
+.nv svg{flex:none;opacity:.85}
+.nv:hover{background:var(--p2);color:var(--tx)}
+.nv.on{background:var(--p2);color:var(--tx);box-shadow:inset 3px 0 0 var(--sig)}
+.nv .badge{margin-left:auto;background:var(--stop);color:#2a0600;border-radius:99px;font-size:11px;font-weight:700;padding:1px 7px}
+.nv .glow-pill{margin-left:auto;background:rgba(52,195,189,.18);color:var(--sig);border-radius:99px;font-size:10px;font-weight:700;padding:1px 6px;letter-spacing:.05em}
+.who{margin-top:auto;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:13px}
+.who b{display:block;font-size:14px}.who button{margin-top:8px;width:100%}
+.main{padding:22px clamp(16px,3vw,36px) 60px;min-width:0}
+.top{display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.top h2{font-size:26px;font-weight:700}.top .sub{color:var(--mut);font-size:13.5px}
+.top .sp{flex:1}
+.live{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--mut)}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--dim)}.live.on i{background:var(--go);box-shadow:0 0 0 0 rgba(61,220,151,.6);animation:beat 1.8s infinite}
+@keyframes beat{70%{box-shadow:0 0 0 8px rgba(61,220,151,0)}100%{box-shadow:0 0 0 0 rgba(61,220,151,0)}}
+.bell{position:relative;border:1px solid var(--line2);background:none;border-radius:99px;width:38px;height:38px;cursor:pointer;display:grid;place-items:center}
+.bell:hover{border-color:var(--sig)}
+.bell b{position:absolute;top:-6px;right:-6px;background:var(--stop);color:#2a0600;border-radius:99px;font-size:11px;padding:0 6px;min-width:18px;text-align:center}
+#notes{position:absolute;right:clamp(16px,3vw,36px);top:66px;width:min(380px,calc(100vw - 32px));max-height:70vh;overflow:auto;z-index:40;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+.note{padding:10px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:10px 1fr;gap:10px}.note:last-child{border:0}
+.note i{width:8px;height:8px;border-radius:50%;margin-top:7px;background:var(--sig)}.note.ok i{background:var(--go)}.note.warn i{background:var(--hold)}.note.bad i{background:var(--stop)}
+.note.unread b{color:#fff}.note small{display:block;color:var(--mut)}
+
+/* Layout Grid & Cards */
+.grid{display:grid;gap:16px}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g2{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr)}.g2e{grid-template-columns:repeat(2,minmax(0,1fr))}
+.kpi{background:var(--p1);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.kpi span{color:var(--mut);font-size:13px}.kpi b{display:block;font:700 28px/1.15 var(--d);margin-top:4px}.kpi small{color:var(--dim);font-size:12px}
+.kpi.go b{color:var(--go)}.kpi.stop b{color:var(--stop)}.kpi.hold b{color:var(--hold)}
+.panel{background:var(--p1);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.panel h3{font-size:18px;margin-bottom:3px}.panel>.s{color:var(--mut);font-size:13px;margin:0 0 14px}
+.bar{height:7px;border-radius:5px;background:#06161a;overflow:hidden}.bar i{display:block;height:100%;background:var(--sig);border-radius:5px;transition:width .6s}
+.bar.hold i{background:var(--hold)}.bar.stop i{background:var(--stop)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}th{text-align:left;color:var(--mut);font-weight:500;white-space:nowrap}th,td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border:0}.tw{overflow-x:auto}
+.empty{color:var(--mut);padding:24px 4px;text-align:center}.empty b{display:block;color:var(--tx);font:700 16px var(--d);margin-bottom:4px}
+
+/* Checkpoint Lane */
+.lane{position:relative;display:grid;grid-template-columns:repeat(5,1fr);background:linear-gradient(180deg,#0b2a30,#09212a);border:1px solid var(--line2);border-radius:14px;padding:42px 8px 16px;overflow:hidden}
+.lane:before{content:"";position:absolute;left:0;right:0;top:32px;height:2px;background:repeating-linear-gradient(90deg,var(--line2) 0 10px,transparent 10px 16px)}
+.gate{position:relative;text-align:center;padding:0 6px}
+.knot{display:block;width:16px;height:16px;border-radius:50%;margin:-18px auto 8px;background:var(--bg);border:2px solid var(--line2);position:relative;z-index:1;transition:background .25s,border-color .25s,transform .25s}
+.gate b{display:block;font:600 13px var(--b)}.gate em{display:block;font:700 20px var(--d);font-style:normal;min-height:26px;color:#fff}
+.gate small{display:block;color:var(--dim);font-size:11px;line-height:1.3}
+.gate.pass .knot{border-color:var(--sig);background:var(--sig);transform:scale(1.2)}
+.gate.go .knot{background:var(--go);border-color:var(--go)}.gate.warn .knot{background:var(--hold);border-color:var(--hold)}.gate.bad .knot{background:var(--stop);border-color:var(--stop)}
+.gate.skip em{color:var(--dim);font:500 12px var(--b)}.gate.skip .knot{border-style:dashed}
+.pk{position:absolute;top:22px;left:0;z-index:3;transform:translateX(-50%);white-space:nowrap;background:var(--sig);color:#032a2b;font:700 12px var(--b);padding:3px 10px;border-radius:99px;box-shadow:0 0 18px rgba(52,195,189,.6);pointer-events:none}
+.pk.go{background:var(--go)}.pk.hold{background:var(--hold)}.pk.stop{background:var(--stop);color:#2a0600}
+
+/* Receipt & Results */
+.rc{position:relative;background:var(--p1);border:1px solid var(--line);border-radius:12px;padding:22px}
+.stamp{display:inline-block;border:3px solid currentColor;border-radius:8px;padding:2px 14px;font:800 24px var(--d);transform:rotate(-3deg);margin:0 0 10px}
+.stamp.go{color:var(--go)}.stamp.hold{color:var(--hold)}.stamp.stop{color:var(--stop)}
+.slam{animation:slam .35s cubic-bezier(.2,1.7,.4,1)}@keyframes slam{from{transform:rotate(-10deg) scale(2);opacity:0}}
+.score{font:800 52px/1 var(--d)}.score small{font:500 14px var(--b);color:var(--mut)}
+.ruler{position:relative;margin:28px 0 4px}.ruler .rb{display:flex;height:9px;border-radius:5px;overflow:hidden}
+.ruler .rb i:nth-child(1){background:var(--go)}.ruler .rb i:nth-child(2){background:var(--hold)}.ruler .rb i:nth-child(3){background:var(--stop)}
+.ruler .mk{position:absolute;top:-26px;transform:translateX(-50%);font:700 13px var(--d);transition:left .8s cubic-bezier(.2,.9,.3,1)}
+.ruler .mk:after{content:"";display:block;width:3px;height:20px;background:#fff;margin:2px auto 0;border-radius:2px}
+.why{list-style:none;margin:12px 0 0;padding:0}.why li{padding:6px 0 6px 12px;border-left:3px solid var(--c,var(--line2));margin-bottom:6px;font-size:13.5px}.why small{display:block;color:var(--mut);font-size:11.5px}
+.xai{margin-top:16px}.xai h4{font-size:14.5px;margin-bottom:8px}
+.xr{display:grid;grid-template-columns:150px 1fr 48px;gap:10px;align-items:center;font-size:13px;margin:5px 0}.xr span:last-child{text-align:right;color:var(--mut)}
+
+/* Chips & Switches */
+.chips{display:flex;gap:7px;flex-wrap:wrap}
+.chip{border:1px solid var(--line2);background:var(--p1);border-radius:99px;padding:4px 12px 4px 10px;cursor:pointer;font-size:12.5px;display:flex;align-items:center;gap:7px}
+.chip:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+.chip[data-c=g]{--c:var(--go)}.chip[data-c=y]{--c:var(--hold)}.chip[data-c=r]{--c:var(--stop)}
+.chip:hover{border-color:var(--sig)}
+details{margin-top:12px}summary{cursor:pointer;color:var(--mut);font-size:13px}
+.switch{position:relative;width:46px;height:26px;flex:none}.switch input{opacity:0;position:absolute;inset:0;width:100%;height:100%;cursor:pointer;margin:0;z-index:1}
+.switch span{position:absolute;inset:0;border-radius:99px;background:var(--line2);transition:.2s}.switch span:after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
+.switch input:checked+span{background:var(--stop)}.switch input:checked+span:after{transform:translateX(20px)}
+
+.feed{display:flex;flex-direction:column;max-height:400px;overflow-y:auto}
+.fi{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.fi:last-child{border:0}.fi small{display:block;color:var(--mut)}.fi.new{animation:fin .7s}@keyframes fin{from{background:rgba(52,195,189,.2)}}
+.ring{position:relative;width:120px;height:120px;flex:none}.ring svg{transform:rotate(-90deg)}.ring b{position:absolute;inset:0;display:grid;place-items:center;font:800 30px var(--d)}
+.chain{display:flex;align-items:stretch;overflow-x:auto;padding:6px 2px 14px}
+.blk{flex:0 0 190px;border:1.5px solid var(--line2);border-radius:9px;background:var(--p2);padding:10px 12px;font-size:13px}
+.blk.x{border-color:var(--stop);background:var(--stop-b)}.blk b{font:700 15px var(--d)}.blk code{display:block;margin-top:5px;overflow-wrap:anywhere;font:11.5px var(--m);color:var(--mut)}.blk em{font-style:normal;font-weight:700;color:var(--go)}
+.lk{flex:0 0 20px;align-self:center;height:3px;background:var(--line2)}.lk.x{background:repeating-linear-gradient(90deg,var(--stop) 0 4px,transparent 4px 8px)}
+.hrs{display:flex;align-items:flex-end;gap:3px;height:110px}.hrs div{flex:1;display:flex;flex-direction:column-reverse;border-radius:3px 3px 0 0;overflow:hidden;min-height:2px;background:var(--p2)}
+.hrs i{display:block}.hrs .a{background:var(--go)}.hrs .v{background:var(--hold)}.hrs .b{background:var(--stop)}
+.hl{display:flex;justify-content:space-between;color:var(--dim);font-size:11.5px;margin-top:4px}
+#toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:99}
+.toast{background:var(--p2);border:1px solid var(--line2);border-left:4px solid var(--sig);border-radius:8px;padding:10px 14px;max-width:340px;font-size:13.5px;box-shadow:0 10px 30px rgba(0,0,0,.45);animation:tin .2s}
+.toast.ok{border-left-color:var(--go)}.toast.warn{border-left-color:var(--hold)}.toast.bad{border-left-color:var(--stop)}.toast small{display:block;color:var(--mut)}
+@keyframes tin{from{transform:translateX(20px);opacity:0}}
+#menu{display:none}
+#drawerBackdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:55;backdrop-filter:blur(2px)}
+#drawerBackdrop.open{display:block}
+
+/* Subnav & Admin Styles */
+.subnav{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;margin-bottom:18px;border-bottom:1px solid var(--line)}
+.subnav::-webkit-scrollbar{height:4px}.subnav::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+.subnav-btn{background:none;border:1px solid var(--line2);color:var(--mut);border-radius:99px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.subnav-btn:hover{border-color:var(--sig);color:var(--tx)}
+.subnav-btn.active{background:rgba(52,195,189,.15);border-color:var(--sig);color:var(--sig);box-shadow:0 0 12px rgba(52,195,189,.2)}
+.filter-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--p2);border:1px solid var(--line2);border-radius:10px;padding:12px 14px;margin-bottom:16px}
+.filter-bar input,.filter-bar select{padding:7px 10px;font-size:13px}
+.cm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.cm-cell{background:var(--p2);border:1px solid var(--line2);border-radius:8px;padding:12px;text-align:center}
+.cm-cell.tn{border-color:rgba(61,220,151,.4);background:rgba(61,220,151,.05)}
+.cm-cell.tp{border-color:rgba(52,195,189,.5);background:rgba(52,195,189,.08)}
+.cm-cell.fp{border-color:rgba(244,183,62,.4);background:rgba(244,183,62,.05)}
+.cm-cell.fn{border-color:rgba(255,90,74,.4);background:rgba(255,90,74,.05)}
+.cm-cell b{display:block;font:700 20px var(--d);margin:2px 0}
+.cm-cell span{font-size:11.5px;color:var(--mut)}
+
+/* Attack Lab Styles */
+.lab-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(52,195,189,.15);border:1px solid rgba(52,195,189,.3);border-radius:99px;padding:3px 12px;font-size:12px;font-weight:600;color:var(--sig)}
+.lab-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px}
+.sc-card{background:var(--p1);border:1.5px solid var(--line);border-radius:11px;padding:15px;cursor:pointer;transition:border-color .15s,transform .12s;position:relative}
+.sc-card:hover{border-color:var(--sig);transform:translateY(-2px)}
+.sc-card.active{border-color:var(--sig);background:linear-gradient(180deg,#0e2c33,#0c2227);box-shadow:0 0 0 1px var(--sig)}
+.sc-card h4{font-size:15px;margin:7px 0 3px;font-weight:700}
+.sc-card p{font-size:12.5px;color:var(--mut);margin:0;line-height:1.4}
+.sc-card .meta{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;margin-top:10px;color:var(--dim);border-top:1px solid var(--line);padding-top:7px}
+.compare-box{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.side-card{background:var(--p1);border:1.5px solid var(--line);border-radius:12px;padding:18px}
+.side-card.normal{border-color:rgba(61,220,151,.4);background:radial-gradient(400px 200px at 10% 0%,rgba(61,220,151,.08) 0,var(--p1) 70%)}
+.side-card.attack{border-color:rgba(255,90,74,.4);background:radial-gradient(400px 200px at 90% 0%,rgba(255,90,74,.08) 0,var(--p1) 70%)}
+.side-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px}
+.matrix-row{display:grid;grid-template-columns:120px 1fr;gap:8px;padding:6px 0;font-size:13px;border-bottom:1px dashed var(--line)}
+.matrix-row:last-child{border:0}
+.meter-wrapper{background:var(--p2);border:1px solid var(--line2);border-radius:12px;padding:14px 16px;margin:16px 0}
+.dual-bar{height:14px;background:#051417;border-radius:99px;position:relative;overflow:hidden;border:1px solid var(--line2)}
+.dual-bar .fill{height:100%;border-radius:99px;transition:width .8s cubic-bezier(.2,.9,.3,1)}
+.layers-table{width:100%;border-collapse:collapse;margin-top:10px}
+.layers-table th{background:var(--p2);padding:9px 12px;font-size:12px;color:var(--mut)}
+.layers-table td{padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px}
+
+/* Responsive */
+@media(max-width:980px){
+  .g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3,.g2,.g2e{grid-template-columns:1fr}
+  #auth{grid-template-columns:1fr}.hero{border-right:0;border-bottom:1px solid var(--line)}
+  #app{grid-template-columns:1fr}
+  aside{position:fixed;left:0;top:0;bottom:0;width:260px;z-index:60;transform:translateX(-100%);transition:transform .2s;box-shadow:12px 0 40px rgba(0,0,0,.5)}
+  aside.open{transform:none}
+  #menu{display:grid;place-items:center;border:1px solid var(--line2);background:none;border-radius:9px;width:38px;height:38px;cursor:pointer}
+  .compare-box{grid-template-columns:1fr}
+}
+@media(max-width:560px){.g4{grid-template-columns:1fr 1fr}.r2{grid-template-columns:1fr}.top h2{font-size:22px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="drawerBackdrop" data-act="closeMenu"></div>
+
+<!-- Login & Register View -->
+<div id="auth" hidden>
+  <section class="hero">
+    <div class="brand"><svg width="30" height="34" viewBox="0 0 30 34" aria-hidden="true"><path d="M15 1 28 6v10c0 8-5.500 14.500-13 17C7.500 30.500 2 24 2 16V6z" fill="#34c3bd"/><path d="m9 17 4.500 4.500L21 12" fill="none" stroke="#07181b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>UPI Shield</div>
+    <h1>AI-Based Multi-Layer UPI Fraud Detection</h1>
+    <p class="lead">Protecting payments with 5 independent security checkpoints: Device & SIM binding, QR verification, Link scanning, Network analysis, and Behavioural Machine Learning.</p>
+    <div id="heroLane"></div>
+    <div class="counters">
+      <div><b id="cChecked">0</b><span>payments verified</span></div>
+      <div><b id="cBlocked">0</b><span>frauds blocked</span></div>
+      <div><b>5 Layers</b><span>defense in depth</span></div>
+    </div>
+  </section>
+  <section class="authbox">
+    <div class="card">
+      <div class="seg" role="tablist"><button class="on" data-act="authTab" data-t="login" role="tab">Sign in</button><button data-act="authTab" data-t="reg" role="tab">Create account</button></div>
+      <form id="fLogin" autocomplete="on">
+        <label for="l_id">Username or Email</label><input id="l_id" autocomplete="username" required>
+        <label for="l_pw">Password</label><input id="l_pw" type="password" autocomplete="current-password" required>
+        <p class="err" id="l_err" role="alert"></p>
+        <button class="btn" style="width:100%;margin-top:8px" id="l_btn">Sign in</button>
+      </form>
+      <form id="fReg" hidden autocomplete="on">
+        <label for="r_name">Full Name</label><input id="r_name" autocomplete="name" required>
+        <div class="r2">
+          <div><label for="r_user">Username</label><input id="r_user" autocomplete="username" required></div>
+          <div><label for="r_phone">Mobile Number</label><input id="r_phone" inputmode="numeric" maxlength="10" autocomplete="tel" required></div>
+        </div>
+        <label for="r_mail">Email Address</label><input id="r_mail" type="email" autocomplete="email" required>
+        <label for="r_pw">Password</label><input id="r_pw" type="password" autocomplete="new-password" placeholder="8+ characters with letters & numbers" required>
+        <p class="mut sm" style="margin:10px 0 0">This browser will automatically be registered as your trusted device.</p>
+        <p class="err" id="r_err" role="alert"></p>
+        <button class="btn" style="width:100%;margin-top:8px" id="r_btn">Create Account</button>
+      </form>
+      <div class="demo" id="demoBox" hidden>
+        <span>Quick Demo Login:</span>
+        <button data-act="demoLogin" data-u="rahul" data-p="Demo@1234">Customer</button>
+        <button data-act="demoLogin" data-u="admin" data-p="Admin@12345">Administrator</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Main App Shell -->
+<div id="app" hidden>
+  <aside id="side">
+    <div class="brand"><svg width="26" height="30" viewBox="0 0 30 34" aria-hidden="true"><path d="M15 1 28 6v10c0 8-5.500 14.500-13 17C7.500 30.500 2 24 2 16V6z" fill="#34c3bd"/><path d="m9 17 4.500 4.500L21 12" fill="none" stroke="#07181b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>UPI Shield</div>
+    <nav id="nav" aria-label="Main navigation"></nav>
+    <div class="who"><b id="whoName"></b><span class="mut" id="whoRole"></span><button class="btn ghost sm" data-act="logout">Sign out</button></div>
+  </aside>
+  <div class="main" id="main"></div>
+</div>
+
+<div id="notes" class="card" hidden></div>
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const inr=n=>"₹"+Number(n||0).toLocaleString("en-IN",{maximumFractionDigits:0});
+const dt=ts=>ts?new Date(ts*1000).toLocaleString("en-IN",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}):"never";
+const lvl=v=>v>=.6?"bad":v>=.3?"warn":"go";
+const CLS={ALLOW:"go",VERIFY:"hold",BLOCK:"stop"},WORD={ALLOW:"Cleared",VERIFY:"Verify",BLOCK:"Blocked"};
+const IC={
+  home:"M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",
+  send:"M22 2L11 13M22 2l-7 20-4-9-9-4z",
+  scan:"M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10",
+  clock:"M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z",
+  lock:"M6 11V8a6 6 0 0 1 12 0v3M5 11h14v10H5z",
+  chain:"M10 14a4 4 0 0 0 5.700 0l3-3a4 4 0 0 0-5.700-5.700l-1 1M14 10a4 4 0 0 0-5.700 0l-3 3a4 4 0 0 0 5.700 5.700l1-1",
+  users:"M17 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8M21 20v-2a4 4 0 0 0-3-3.900M16 2.100a4 4 0 0 1 0 7.800",
+  inbox:"M22 12h-6l-2 3h-4l-2-3H2M5.500 5h13l3.500 7v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z",
+  ban:"M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM4.900 4.900l14.200 14.200",
+  sliders:"M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6",
+  file:"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h8",
+  bell:"M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.700 21a2 2 0 0 1-3.400 0",
+  menu:"M3 6h18M3 12h18M3 18h18",
+  shield:"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+  zap:"M13 2L3 14h9l-1 8 10-12h-9l1-8z",
+  refresh:"M23 4v6h-6M1 20v-6h6M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15",
+  trash:"M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2",
+  check:"M20 6L9 17l-5-5",
+  alert:"M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4m0 4h.01",
+  play:"M5 3l14 9-14 9V3z",
+  link:"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71",
+  wifi:"M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"
+};
+const ic=n=>`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${IC[n]||IC.shield}"/></svg>`;
+
+/* State & API Client */
+const S={
+  token:localStorage.ups_token||"",
+  acc:null,
+  page:"",
+  live:false,
+  es:null,
+  unread:0,
+  thr:{verify:35,block:70},
+  queue:0,
+  handlers:[],
+  timers:[],
+  lab:{scenarios:[],curr:"phishing_link",sim:null}
+};
+const devId=()=>localStorage.ups_dev||(localStorage.ups_dev="DEV-"+crypto.randomUUID().slice(0,8).toUpperCase());
+const simId=()=>localStorage.ups_sim||(localStorage.ups_sim="SIM-"+crypto.randomUUID().slice(0,8).toUpperCase());
+
+async function api(path,body,method){
+  const o={headers:{}};
+  if(S.token)o.headers.Authorization="Bearer "+S.token;
+  if(body instanceof FormData){
+    o.method=method||"POST";
+    o.body=body;
+  }else if(body!==undefined){
+    o.headers["Content-Type"]="application/json";
+    o.method=method||"POST";
+    o.body=JSON.stringify(body);
+  }else if(method){
+    o.method=method;
+  }
+  const r=await fetch("/api"+path,o);
+  const j=await r.json().catch(()=>({}));
+  if(r.status===401&&S.token&&!path.startsWith("/auth/")){logout(true);throw new Error("Session expired. Please sign in again.")}
+  if(!r.ok)throw new Error(typeof j.detail==="string"?j.detail:Array.isArray(j.detail)?j.detail.map(d=>d.msg).join("; "):"Request failed");
+  return j;
+}
+
+function toast(t,sub="",kind=""){
+  const d=document.createElement("div");
+  d.className="toast "+kind;
+  d.innerHTML=`<b>${esc(t)}</b>${sub?`<small>${esc(sub)}</small>`:""}`;
+  $("toasts").appendChild(d);
+  setTimeout(()=>d.remove(),4800);
+}
+async function busy(btn,fn){if(btn)btn.disabled=true;try{return await fn()}finally{if(btn)btn.disabled=false}}
+
+/* Checkpoint Lane */
+const GATES=[
+  ["device","Identity & SIM","Phone & Device Match"],
+  ["qr","QR Integrity","Receiver & Amount Format"],
+  ["link","Link / Domain","Phishing & TLD Reputation"],
+  ["network","Network Risk","Wi-Fi, IP & VPN Check"],
+  ["beh","Behaviour AI","Random Forest & Rules"]
+];
+const laneHTML=()=>`<div class="lane">${GATES.map(g=>`<div class="gate" data-g="${g[0]}"><span class="knot"></span><b>${g[1]}</b><em></em><small>${g[2]}</small></div>`).join("")}</div>`;
+
+function runLane(el,o){
+  const lane=el.querySelector(".lane"),dur=o.dur||2200,gs=[...lane.querySelectorAll(".gate")];
+  const pk=document.createElement("span");pk.className="pk";pk.textContent=o.label;lane.appendChild(pk);
+  gs.forEach(g=>{g.className="gate";g.querySelector("em").textContent=""});
+  pk.animate([{left:"3%"},{left:"97%"}],{duration:dur,easing:"linear",fill:"forwards"});
+  gs.forEach((g,i)=>setTimeout(()=>{
+    if(!o.layers){g.className="gate pass";return}
+    const k=GATES[i][0],l=k==="beh"?{risk:o.beh,present:true}:o.layers[k];
+    if(!l||!l.present){g.className="gate skip";g.querySelector("em").textContent="passed";return}
+    g.className="gate "+lvl(l.risk);g.querySelector("em").textContent=Math.round(l.risk*100)+"%";
+  },dur*(((i+.5)*20-3)/94)));
+  setTimeout(()=>{pk.classList.add(CLS[o.decision]||"stop");pk.textContent=WORD[o.decision]||"Blocked"},dur);
+  setTimeout(()=>{pk.remove();if(!o.layers)gs.forEach(g=>g.className="gate")},dur+1200);
+  return dur+200;
+}
+
+/* Common Renderers */
+function xai(list){
+  if(!list||!list.length)return "";
+  const mx=Math.max(...list.map(x=>x.impact));
+  return `<div class="xai"><h4>Explainable AI (What influenced the score)</h4>${list.map(x=>`<div class="xr"><span>${esc(x.label)}</span><div class="bar ${x.impact>=25?"stop":x.impact>=10?"hold":""}"><i style="width:${Math.max(6,x.impact/mx*100)}%"></i></div><span>+${x.impact}</span></div>`).join("")}<p class="mut sm" style="margin:8px 0 0">Points added to the fraud risk score by each signal.</p></div>`;
+}
+
+const whyList=rs=>rs&&rs.length?`<ul class="why">${rs.map(r=>`<li style="--c:${(r.severity??.5)>=.7?"var(--stop)":(r.severity??.5)>=.4?"var(--hold)":"var(--line2)"}"><b>${esc(r.text??r)}</b><small>${esc(r.layer??"signal")}</small></li>`).join("")}</ul>`:`<p class="mut">No warning signs detected.</p>`;
+
+function receipt(r){
+  const c=CLS[r.decision],tv=S.thr.verify,tb=S.thr.block;
+  const word={ALLOW:"Safe (Cleared)",VERIFY:"Verification Required (OTP)",BLOCK:"Payment Blocked"}[r.decision];
+  return `<div class="rc"><div class="stamp ${c} slam">${word}</div>
+  <div class="score">${r.risk_score}<small> / 100 Risk Score</small></div>
+  <div class="ruler"><div class="rb"><i style="flex:${tv}"></i><i style="flex:${tb-tv}"></i><i style="flex:${100-tb}"></i></div><div class="mk" data-to="${r.risk_score}" style="left:${Math.max(4,Math.min(96,r.risk_score))}%">${r.risk_score}</div></div>
+  <p style="margin:14px 0 0"><b>${esc(r.message||"")}</b></p>
+  ${r.alert?`<p class="mut sm">${esc(r.alert)}</p>`:""}
+  ${whyList(r.reasons)}${xai(r.explain)}
+  <p class="mut sm" style="margin-top:14px">Transaction <span class="mono">${esc(r.tx_id)}</span> &bull; Blockchain Block ${r.ledger_block?"#"+r.ledger_block.index:"-"} (<span class="mono">${esc((r.ledger_block?.hash||"").slice(0,10))}...</span>)</p>
+  <div class="row" style="margin-top:12px"><button class="btn ghost sm" data-act="report" data-tx="${esc(r.tx_id)}">Report this receiver as fraud</button></div>
+  <div id="otpBox" ${r.decision==="VERIFY"?"":"hidden"}><hr style="border:0;border-top:1px solid var(--line);margin:16px 0"><h4>OTP Verification Required</h4>
+    <p class="mut sm">${r.demo_otp?`Demo mode: OTP is <b class="mono" style="color:var(--sig)">${esc(r.demo_otp)}</b>.`:"Enter the 6-digit OTP sent to your registered phone."}</p>
+    <div class="row"><input id="otp" maxlength="6" inputmode="numeric" style="max-width:160px" placeholder="6-digit OTP" aria-label="OTP"><button class="btn sm" data-act="otp" data-tx="${esc(r.tx_id)}">Verify OTP</button></div><p class="err" id="otpOut"></p></div></div>`;
+}
+
+function showReceipt(el,r){
+  el.innerHTML=receipt(r);
+  const mk=el.querySelector(".mk");
+  requestAnimationFrame(()=>requestAnimationFrame(()=>mk.style.left=Math.max(4,Math.min(96,r.risk_score))+"%"));
+}
+
+const feedItem=(e,adm)=>`<div class="fi${e.replay?"":" new"}"><span class="pill ${CLS[e.decision]||"stop"}">${WORD[e.decision]||"Blocked"}</span><div>${inr(e.amount)} to <span class="mono">${esc(e.vpa)}</span><small>${adm?(esc(e.uname||"")+": "):""}${esc((e.reasons||[])[0]||"Payment verified")}</small></div><b>${Math.round(e.score)}</b></div>`;
+const th=(...h)=>`<tr>${h.map(x=>`<th>${x}</th>`).join("")}</tr>`;
+const pageHead=(t,sub,extra="")=>`<div class="top"><button id="menu" data-act="menu" aria-label="Open navigation menu">${ic("menu")}</button><div><h2>${t}</h2><div class="sub">${sub}</div></div><span class="sp"></span>${extra}<span class="live ${S.live?"on":""}"><i></i><span>${S.live?"Live":"Offline"}</span></span>${S.acc&&S.acc.role==="user"?`<button class="bell" data-act="bell" aria-label="Notifications">${ic("bell")}<b id="bellN" ${S.unread?"":"hidden"}>${S.unread}</b></button>`:""}</div>`;
+const setMain=h=>{$("main").innerHTML=h;$("side").classList.remove("open");$("drawerBackdrop").classList.remove("open")};
+
+/* Live Stream (SSE) */
+function connectLive(){
+  if(S.es)S.es.close();
+  S.es=new EventSource("/api/live/stream?token="+encodeURIComponent(S.token));
+  S.es.onopen=()=>{S.live=true;paintLive()};
+  S.es.onerror=()=>{S.live=false;paintLive()};
+  S.es.onmessage=m=>{
+    const e=JSON.parse(m.data);
+    if(e.type==="notify"&&!e.replay){S.unread++;paintBell();toast(e.title,e.body,e.level)}
+    if(e.type==="notify"&&e.replay)return;
+    if(e.type==="tx"&&S.acc.role==="admin"&&e.decision!=="ALLOW"&&!e.replay){S.queue++;paintBadge()}
+    S.handlers.forEach(h=>h(e));
+  };
+}
+function paintLive(){document.querySelectorAll(".live").forEach(l=>{l.classList.toggle("on",S.live);l.lastChild.textContent=S.live?"Live":"Offline"})}
+function paintBell(){const b=$("bellN");if(b){b.textContent=S.unread;b.hidden=!S.unread}}
+function paintBadge(){const b=$("qBadge");if(b){b.textContent=S.queue;b.hidden=!S.queue}}
+function onLive(h){S.handlers.push(h)}
+function later(fn,ms){const t=setTimeout(fn,ms);S.timers.push(t);return t}
+
+/* Navigation Definition */
+const NAV={
+  user:[
+    ["dash","Dashboard","home"],
+    ["pay","Payment Checkpoint","send"],
+    ["qr","QR Code Scanner","scan"],
+    ["scam","Link & Message Scanner","file"],
+    ["net","Network Security Check","wifi"],
+    ["lab","Attack Replay Lab","shield"],
+    ["hist","Transaction History","clock"],
+    ["sec","Security & Devices","lock"],
+    ["ledger","Blockchain Ledger","chain"]
+  ],
+  admin:[
+    ["admin","Dashboard Overview","home"],
+    ["a_tx","Transaction Monitoring","clock"],
+    ["a_alerts","Fraud Alerts","alert"],
+    ["a_users","User Management","users"],
+    ["a_ai","AI Model Monitoring","sliders"],
+    ["a_ledger","Ledger Verification","chain"],
+    ["a_audit","Audit Logs","file"],
+    ["a_bl","Blacklist Management","ban"],
+    ["lab","Attack Replay Lab","shield"]
+  ]
+};
+
+function adminSubNav(active){
+  const items=[
+    ["admin","Overview","home"],
+    ["a_tx","Transactions","clock"],
+    ["a_alerts","Fraud Alerts","alert"],
+    ["a_users","Users","users"],
+    ["a_ai","AI Monitoring","sliders"],
+    ["a_ledger","Ledger","chain"],
+    ["a_audit","Audit Logs","file"],
+    ["a_bl","Blacklist","ban"],
+    ["lab","Attack Lab","shield"]
+  ];
+  return `<div class="subnav">${items.map(it=>`<button class="subnav-btn ${active===it[0]?"active":""}" data-act="go" data-p="${it[0]}">${ic(it[2])}${it[1]}${it[0]==="a_alerts"&&S.queue?`<span class="badge" style="margin-left:4px;background:var(--stop);color:#2a0600;padding:1px 6px;border-radius:99px;font-size:11px">${S.queue}</span>`:""}</button>`).join("")}</div>`;
+}
+
+/* Authentication */
+const HERO=[
+  {label:"₹320 to chaiwala@oksbi",decision:"ALLOW",layers:{device:{risk:0,present:true},qr:{risk:.04,present:true},link:{present:false},network:{risk:.05,present:true}},beh:.06},
+  {label:"₹9,000 at 2 AM, new receiver",decision:"VERIFY",layers:{device:{risk:0,present:true},qr:{present:false},link:{present:false},network:{risk:.35,present:true}},beh:.52},
+  {label:"₹80,000 from unknown device",decision:"BLOCK",layers:{device:{risk:.7,present:true},qr:{present:false},link:{present:false},network:{risk:.8,present:true}},beh:.93},
+  {label:"₹40 QR modified to ₹4,000",decision:"BLOCK",layers:{device:{risk:0,present:true},qr:{risk:.95,present:true},link:{present:false},network:{risk:.05,present:true}},beh:.7},
+  {label:"₹700 via fake KYC link",decision:"BLOCK",layers:{device:{risk:0,present:true},qr:{present:false},link:{risk:1,present:true},network:{risk:.1,present:true}},beh:.66}
+];
+let heroT=null;
+
+function showAuth(){
+  $("app").hidden=true;$("auth").hidden=false;S.es&&S.es.close();
+  $("heroLane").innerHTML=laneHTML();let i=0;clearInterval(heroT);
+  const tick=()=>runLane($("heroLane"),{...HERO[i++%HERO.length],dur:2500});tick();heroT=setInterval(tick,4200);
+  fetch("/api/public/stats").then(r=>r.json()).then(s=>{$("cChecked").textContent=s.checked.toLocaleString("en-IN");$("cBlocked").textContent=s.blocked.toLocaleString("en-IN")}).catch(()=>{});
+  fetch("/api/health").then(r=>r.json()).then(h=>{$("demoBox").hidden=!h.demo_mode}).catch(()=>{});
+}
+
+async function startSession(j){
+  S.token=j.token;localStorage.ups_token=j.token;S.acc=j.account;clearInterval(heroT);
+  let trusted=false;
+  if(j.new_device&&S.demoPw&&j.account.role==="user"){
+    try{await api("/me/devices",{device_id:devId(),sim_serial:simId(),label:"Demo browser",password:S.demoPw});trusted=true}catch{}
+  }
+  S.demoPw=null;await enterApp();
+  if(trusted)toast("Trusted Device Verified","This browser is registered as your primary device.","ok");
+  else if(j.new_device)toast("New Device Detected","Payments from this browser will require extra verification.","warn");
+}
+
+$("fLogin").onsubmit=async e=>{
+  e.preventDefault();$("l_err").textContent="";
+  await busy($("l_btn"),async()=>{
+    try{await startSession(await api("/auth/login",{identifier:$("l_id").value,password:$("l_pw").value,device_id:devId()}))}
+    catch(x){$("l_err").textContent=x.message}
+  });
+};
+
+$("fReg").onsubmit=async e=>{
+  e.preventDefault();$("r_err").textContent="";
+  await busy($("r_btn"),async()=>{
+    try{await startSession(await api("/auth/register",{name:$("r_name").value,username:$("r_user").value,phone:$("r_phone").value,email:$("r_mail").value,password:$("r_pw").value,device_id:devId(),sim_serial:simId()}))}
+    catch(x){$("r_err").textContent=x.message}
+  });
+};
+
+function logout(silent){
+  S.token="";S.acc=null;delete localStorage.ups_token;S.handlers=[];
+  if(!silent)toast("Signed Out");showAuth();
+}
+
+async function enterApp(){
+  $("auth").hidden=true;$("app").hidden=false;
+  $("whoName").textContent=S.acc.name;
+  $("whoRole").textContent=S.acc.role==="admin"?"Administrator":"Customer ("+(S.acc.user_id||"")+")";
+  $("nav").innerHTML=NAV[S.acc.role].map(n=>`<button class="nv" data-act="go" data-p="${n[0]}" id="nv_${n[0]}">${ic(n[2])}${n[1]}${n[0]==="lab"?`<span class="glow-pill">LAB</span>`:""}${(n[0]==="a_alerts"||n[0]==="a_queue")?`<span class="badge" id="qBadge" hidden></span>`:""}</button>`).join("");
+  try{const h=await api("/health");if(h.thresholds)S.thr=h.thresholds}catch{}
+  if(S.acc.role==="user"){try{const o=await api("/me/overview");S.unread=o.unread}catch{}}
+  if(S.acc.role==="admin"){try{const st=await api("/admin/stats");S.queue=st.queue;paintBadge()}catch{}}
+  connectLive();route();
+}
+
+function route(){
+  const first=NAV[S.acc.role][0][0];
+  let p=(location.hash.replace("#/","")||first);
+  const ALIAS={
+    a_over:"admin",a_dash:"admin",overview:"admin",
+    a_queue:"a_alerts",queue:"a_alerts",alerts:"a_alerts",
+    a_rules:"a_ai",rules:"a_ai",
+    tx:"a_tx",transactions:"a_tx",
+    users:"a_users",audit:"a_audit",
+    ledger:S.acc&&S.acc.role==="admin"?"a_ledger":"ledger",
+    scan:"qr",scanner:"qr",network:"net"
+  };
+  if(ALIAS[p])p=ALIAS[p];
+  if(!NAV[S.acc.role].some(n=>n[0]===p))p=first;
+  window.scrollTo(0,0);S.page=p;S.handlers=[];S.timers.forEach(clearTimeout);S.timers=[];
+  document.querySelectorAll(".nv").forEach(b=>b.classList.toggle("on",b.id==="nv_"+p));
+  (PAGES[p]||PAGES[first])();
+}
+window.addEventListener("hashchange",()=>S.acc&&route());
+
+/* Pages Object */
+const PAGES={};
+
+/* ---------- 1. User Dashboard ---------- */
+PAGES.dash=async()=>{
+  setMain(pageHead("Dashboard","Real-time account status and fraud telemetry")+`<p class="mut">Loading dashboard...</p>`);
+  const [o,tx]=await Promise.all([api("/me/overview"),api("/me/transactions?limit=8")]);
+  const p=o.profile,t=o.trust;
+  const used=Math.min(100,o.spent_today/p.daily_limit*100),R=50,C=2*Math.PI*R;
+  const col=t.score>=80?"var(--go)":t.score>=55?"var(--hold)":"var(--stop)";
+  const tot=Object.values(o.counts).reduce((a,b)=>a+b,0);
+
+  setMain(pageHead(`Welcome, ${esc(p.name.split(" ")[0])}`,`${esc(p.bank)} Account`)+`
+  <div id="dashFrozenBanner" class="panel" style="border-color:var(--stop);margin-bottom:16px;${p.frozen?"":"display:none"}">
+    <div class="row" style="justify-content:space-between">
+      <div><b>⚠️ Account is Frozen.</b> <span class="mut">All outgoing payments are currently blocked for security.</span></div>
+      <button class="btn sm ghost" data-act="freezeToggle" checked>Unfreeze Account</button>
+    </div>
+  </div>
+
+  <div class="grid g4">
+    <div class="kpi"><span>Spent Today</span><b>${inr(o.spent_today)}</b><div class="bar" style="margin:8px 0 4px"><i style="width:${used}%"></i></div><small>Limit: ${inr(p.daily_limit)}</small></div>
+    <div class="kpi"><span>Payments Verified</span><b>${tot}</b><small>${o.counts.ALLOW||0} cleared, ${o.counts.VERIFY||0} verified</small></div>
+    <div class="kpi stop"><span>Fraud Stopped</span><b>${inr(o.protected)}</b><small>${o.counts.BLOCK||0} suspicious attempts blocked</small></div>
+    <div class="kpi"><span>Security Score</span><b style="color:${col}">${t.score}/100</b><small>${t.score>=80?"Strong protection":"Improve security settings"}</small></div>
+  </div>
+
+  <div class="panel" style="margin:16px 0;padding:14px 18px">
+    <div class="row" style="justify-content:space-between">
+      <div><b>Live Payment Checkpoint</b><span class="mut sm"> &bull; Real-time 5-gate security inspection</span></div>
+      <button class="btn sm" data-act="go" data-p="pay">${ic("send")} Make a Payment</button>
+    </div>
+    <div id="dLane" style="margin-top:12px">${laneHTML()}</div>
+  </div>
+
+  <div class="grid g2">
+    <div class="panel">
+      <div class="row" style="justify-content:space-between">
+        <h3>Recent Activity</h3>
+        <button class="btn ghost sm" data-act="go" data-p="hist">View All</button>
+      </div>
+      <p class="s">Real-time payment history and security decisions.</p>
+      <div class="feed" id="dFeed">
+        ${tx.length?tx.map(x=>feedItem({decision:x.decision,amount:x.amount,vpa:x.vpa,score:x.risk_score,reasons:x.reasons.map(r=>r.text),replay:true},false)).join(""):`<div class="empty"><b>No payments recorded yet</b>Make a payment or run an attack scenario in the Lab.</div>`}
+      </div>
+    </div>
+
+    <div style="display:grid;gap:16px">
+      <div class="panel">
+        <h3>Panic Freeze</h3>
+        <p class="s">Instantly halt all outgoing payments if phone is lost or scam call is in progress.</p>
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <div><b id="dFzTxt">${p.frozen?"Status: FROZEN":"Status: Normal"}</b><div class="mut sm">${p.frozen?"All outgoing payments blocked":"Payments work normally"}</div></div>
+          <label class="switch" style="margin:0"><input type="checkbox" id="dFreeze" ${p.frozen?"checked":""} data-act="freezeToggle" aria-label="Panic freeze switch"><span></span></label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Security Health Tips</h3>
+        <p class="s">Recommendations to keep your account safe.</p>
+        <ul style="margin:0;padding-left:18px;font-size:13.5px">
+          ${t.tips.map(x=>`<li style="margin-bottom:6px">${esc(x)}</li>`).join("")}
+        </ul>
+      </div>
+    </div>
+  </div>`);
+
+  onLive(e=>{
+    if(e.replay)return;
+    if(e.type==="tx"){
+      const f=$("dFeed");
+      if(f){f.querySelector(".empty")?.remove();f.insertAdjacentHTML("afterbegin",feedItem(e,false))}
+      runLane($("dLane"),{label:inr(e.amount),decision:e.decision});
+    }
+  });
+};
+
+/* ---------- 2. Secure Payment Verification ---------- */
+const SC=[
+  ["g","Normal Payment",{vpa:"ramesh.kirana@ybl",amount:500}],
+  ["y","New Receiver (₹9,000 at 2 AM)",{vpa:"friend.new@oksbi",amount:9000,hour:2}],
+  ["y","Unknown Device (₹300)",{dev:"DEV-NEW-PHONE",amount:300}],
+  ["y","Public Open Wi-Fi + VPN",{net:"public_wifi_open",vpn:true}],
+  ["r","Stolen Device (₹80,000)",{dev:"DEV-THIEF-01",sim:"SIM-THIEF",amount:80000,net:"public_wifi_open",loc:"28.6139,77.2090"}],
+  ["r","SIM Swap Detected",{sim:"SIM-HACKER-777",amount:2000}],
+  ["r","Tampered QR Amount (₹40 to ₹4,000)",{vpa:"chaiwala@oksbi",amount:4000,qr:"upi://pay?pa=chaiwala@oksbi&pn=Sharma%20Chai%20Point&am=40"}],
+  ["r","Phishing Payment Link",{link:"http://paytm-kyc-update.xyz/verify?otp=1",amount:700}],
+  ["r","Blacklisted Receiver UPI ID",{vpa:"refund.helpdesk@ybl",amount:100}],
+  ["r","Malicious IP Address",{ip:"203.0.113.7",net:"mobile_data"}]
+];
+const BASE={vpa:"ramesh.kirana@ybl",amount:500,qr:"",link:"",net:"home_wifi",vpn:false,tls:true,loc:"18.5204,73.8567",ip:"",hour:"",phone:"",dev:"",sim:""};
+
+PAGES.pay=()=>{
+  setMain(pageHead("Payment Checkpoint","5-layer automated security check before payment is processed")+`
+  <div id="pLane">${laneHTML()}</div>
+  
+  <p class="mut sm" style="margin:16px 0 8px">Test Fraud Presets (Click any scenario to test the multi-layer checkpoint):</p>
+  <div class="chips" id="chips">${SC.map((s,i)=>`<button class="chip" data-c="${s[0]}" data-act="scenario" data-i="${i}">${esc(s[1])}</button>`).join("")}</div>
+
+  <div class="grid g2" style="margin-top:18px;align-items:start">
+    <div class="panel">
+      <h3>Payment Details</h3>
+      <p class="s">Enter payment details or select a preset above.</p>
+      <div class="r2">
+        <div><label for="p_vpa">Payee UPI ID</label><input id="p_vpa" placeholder="merchant@bank"></div>
+        <div><label for="p_amt">Amount (₹)</label><input id="p_amt" type="number" min="1"></div>
+      </div>
+      <label for="p_qr">Scanned QR Text (Optional)</label><textarea id="p_qr" placeholder="upi://pay?pa=...&pn=...&am=..."></textarea>
+      <label for="p_link">Payment Link (Optional)</label><input id="p_link" placeholder="https://...">
+      <div class="r2">
+        <div>
+          <label for="p_net">Network Connection</label>
+          <select id="p_net">
+            <option value="home_wifi">Home Wi-Fi (Clean)</option>
+            <option value="mobile_data">Mobile Data (LTE/5G)</option>
+            <option value="office_wifi">Office Wi-Fi</option>
+            <option value="public_wifi_secured">Public Wi-Fi (Secured)</option>
+            <option value="public_wifi_open">Public Wi-Fi (Open/Insecure)</option>
+          </select>
+        </div>
+        <div>
+          <label for="p_loc">Location</label>
+          <select id="p_loc">
+            <option value="18.5204,73.8567">Pune (Home City)</option>
+            <option value="19.0760,72.8777">Mumbai</option>
+            <option value="28.6139,77.2090">Delhi</option>
+            <option value="12.9716,77.5946">Bengaluru</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <label style="margin:0;display:flex;gap:7px;align-items:center;color:var(--tx)"><input type="checkbox" id="p_vpn"> VPN / Proxy</label>
+        <label style="margin:0;display:flex;gap:7px;align-items:center;color:var(--tx)"><input type="checkbox" id="p_tls" checked> Encrypted TLS Connection</label>
+      </div>
+
+      <details>
+        <summary>Hardware &amp; Environment Simulation (For Testing Theft / SIM Swap)</summary>
+        <div class="r2" style="margin-top:8px">
+          <div><label for="p_dev">Device ID Override</label><input id="p_dev" placeholder="${esc(devId())}"></div>
+          <div><label for="p_sim">SIM Serial Override</label><input id="p_sim" placeholder="${esc(simId())}"></div>
+        </div>
+        <div class="r2">
+          <div><label for="p_phone">Mobile Number Override</label><input id="p_phone" inputmode="numeric" maxlength="10"></div>
+          <div><label for="p_ip">IP Address Override</label><input id="p_ip" placeholder="e.g. 203.0.113.7"></div>
+        </div>
+        <label for="p_hour">Simulated Hour (0-23)</label><input id="p_hour" type="number" min="0" max="23" style="max-width:140px">
+      </details>
+      <p class="err" id="p_err" role="alert"></p>
+      <button class="btn" id="p_go" data-act="pay" style="margin-top:12px">${ic("send")} Check &amp; Verify Payment</button>
+    </div>
+
+    <div id="res">
+      <div class="rc">
+        <h3>Verification Telemetry</h3>
+        <p class="mut">Click "Check & Verify Payment" or choose a scenario above to inspect the live AI decision and 5-layer checkpoint.</p>
+      </div>
+    </div>
+  </div>`);
+  fillPay({});
+};
+
+const PF={vpa:"p_vpa",amount:"p_amt",qr:"p_qr",link:"p_link",net:"p_net",loc:"p_loc",ip:"p_ip",hour:"p_hour",phone:"p_phone",dev:"p_dev",sim:"p_sim"};
+function fillPay(o){const v={...BASE,...o};Object.entries(PF).forEach(([k,id])=>$(id).value=v[k]);$("p_vpn").checked=v.vpn;$("p_tls").checked=v.tls}
+
+async function doPay(){
+  $("p_err").textContent="";
+  const [lat,lon]=$("p_loc").value.split(",").map(Number);
+  const nz=id=>$(id).value.trim()||null;
+  const body={
+    receiver_vpa:nz("p_vpa"),amount:Number($("p_amt").value),qr_payload:nz("p_qr"),payment_link:nz("p_link"),lat,lon,
+    hour_override:$("p_hour").value===""?null:Number($("p_hour").value),device_id:nz("p_dev")||devId(),sim_serial:nz("p_sim")||simId(),phone:nz("p_phone"),
+    network:{type:$("p_net").value,ip:nz("p_ip"),vpn:$("p_vpn").checked,tls_ok:$("p_tls").checked}
+  };
+  try{
+    const r=await api("/check-payment",body);
+    const beh=Math.max(r.breakdown.ml_probability,r.breakdown.rule_points/100);
+    const wait=runLane($("pLane"),{label:inr(body.amount),decision:r.decision,layers:r.layers,beh});
+    $("res").innerHTML=`<div class="rc"><p class="mut">Evaluating 5-layer fraud pipeline...</p></div>`;
+    later(()=>showReceipt($("res"),r),wait);
+  }catch(x){$("p_err").textContent=x.message}
+}
+
+/* ---------- 3. QR Code Scanner ---------- */
+PAGES.qr=()=>{
+  setMain(pageHead("QR Code Scanner","Decode and verify UPI payment QR codes before scanning to pay")+`
+  <div class="grid g2" style="align-items:start">
+    <div class="panel">
+      <h3>Scan QR Code</h3>
+      <p class="s">Upload an image or paste the raw UPI string to verify the receiver, amount, and merchant.</p>
+
+      <div class="seg" style="margin-bottom:12px">
+        <button class="on" id="qrTabImg" data-act="qrMode" data-m="img">Upload QR Image</button>
+        <button id="qrTabText" data-act="qrMode" data-m="text">Paste QR Text / String</button>
+      </div>
+
+      <div id="qrSecImg">
+        <label for="q_file">Choose QR Image (PNG, JPG, WEBP)</label>
+        <input type="file" id="q_file" accept="image/*">
+        <div id="q_preview_box" style="margin:10px 0;display:none">
+          <img id="q_preview" alt="QR Preview" style="max-height:160px;border-radius:8px;border:1px solid var(--line2)">
+        </div>
+      </div>
+
+      <div id="qrSecText" hidden>
+        <label for="q_raw_text">Raw UPI QR String</label>
+        <textarea id="q_raw_text" placeholder="upi://pay?pa=chaiwala@oksbi&pn=Sharma%20Chai%20Point&am=40&cu=INR"></textarea>
+      </div>
+
+      <div class="r2" style="margin-top:10px">
+        <div><label for="q_amt">Expected Amount (₹) (Optional)</label><input id="q_amt" type="number" placeholder="Check for tampering"></div>
+        <div><label for="q_vpa">Expected UPI ID (Optional)</label><input id="q_vpa" placeholder="Check receiver match"></div>
+      </div>
+
+      <button class="btn" style="margin-top:14px" data-act="scanQr">${ic("scan")} Verify QR Code</button>
+      <div id="q_out" style="margin-top:14px"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Test QR Generator</h3>
+      <p class="s">Generate sample QR codes to test the scanner immediately.</p>
+      
+      <div class="chips" style="margin-bottom:10px">
+        <button class="chip" data-c="g" data-act="loadSampleQr" data-k="clean">Genuine Merchant (₹40)</button>
+        <button class="chip" data-c="r" data-act="loadSampleQr" data-k="tamper">Tampered Amount (₹4,000)</button>
+        <button class="chip" data-c="r" data-act="loadSampleQr" data-k="collect">Collect Scam</button>
+        <button class="chip" data-c="r" data-act="loadSampleQr" data-k="bl">Blacklisted Payee</button>
+      </div>
+
+      <label for="q_mk">QR Payload Text</label>
+      <textarea id="q_mk">upi://pay?pa=chaiwala@oksbi&pn=Sharma%20Chai%20Point&am=40&cu=INR</textarea>
+
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost" data-act="mkQr">Generate QR Image</button>
+        <button class="btn sm" id="btnTestGenQr" data-act="useGenQr" style="display:none">${ic("check")} Load &amp; Test in Scanner</button>
+      </div>
+
+      <div style="text-align:center;margin-top:14px">
+        <img id="q_img" alt="Generated QR" style="max-width:180px;display:none;border-radius:8px;background:#fff;padding:8px;margin:0 auto">
+      </div>
+    </div>
+  </div>`);
+
+  $("q_file").onchange=e=>{
+    const f=e.target.files[0];
+    if(f){
+      const fr=new FileReader();
+      fr.onload=ev=>{$("q_preview").src=ev.target.result;$("q_preview_box").style.display="block"};
+      fr.readAsDataURL(f);
+    }
+  };
+};
+
+/* ---------- 4. Suspicious Link & Message Scanner ---------- */
+PAGES.scam=()=>{
+  setMain(pageHead("Link & Message Scanner","Inspect suspicious payment links and fraudulent messages")+`
+  <div class="grid g2e" style="align-items:start">
+    <div class="panel">
+      <h3>SMS &amp; Message Scanner</h3>
+      <p class="s">Paste an SMS, WhatsApp text, or caller pitch to detect phishing, fake KYC, and OTP theft.</p>
+      <textarea id="m_txt" style="min-height:120px" placeholder="Example: Dear customer, your bank KYC will expire today. Update immediately to prevent account blockage: http://sbi-kyc-verify.icu/update"></textarea>
+      
+      <div class="row" style="margin-top:10px">
+        <button class="btn" data-act="scanMsg">${ic("file")} Check Message</button>
+        <button class="btn ghost sm" data-act="msgEx">Try Scam Example</button>
+      </div>
+      <div id="m_out" style="margin-top:14px"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Payment Link &amp; URL Scanner</h3>
+      <p class="s">Scan URLs for brand look-alikes, high-risk TLDs (.xyz, .icu), missing HTTPS, and raw IP addresses.</p>
+      <input id="u_in" placeholder="https://..." value="http://paytm-kyc-update.xyz/verify">
+      
+      <div class="row" style="margin-top:10px">
+        <button class="btn" data-act="scanUrl">${ic("link")} Scan Link</button>
+        <button class="btn ghost sm" data-act="urlExBad">Try Phishing Link</button>
+        <button class="btn ghost sm" data-act="urlExGood">Try Official Link</button>
+      </div>
+      <div id="u_out" style="margin-top:14px"></div>
+    </div>
+  </div>`);
+};
+
+/* ---------- 5. Network Security Check ---------- */
+PAGES.net=()=>{
+  setMain(pageHead("Network Security Check","Verify whether your current internet connection is safe for UPI payments")+`
+  <div class="grid g2" style="align-items:start">
+    <div class="panel">
+      <h3>Connection Security Parameters</h3>
+      <p class="s">Check Wi-Fi encryption, public hotspot safety, VPN/Tor proxies, and IP reputation.</p>
+      
+      <label for="n_type">Network Type</label>
+      <select id="n_type">
+        <option value="home_wifi">Home Wi-Fi (Private &amp; Encrypted)</option>
+        <option value="mobile_data">Mobile Data (LTE / 5G)</option>
+        <option value="office_wifi">Office / Enterprise Wi-Fi</option>
+        <option value="public_wifi_secured">Public Wi-Fi (Password Protected)</option>
+        <option value="public_wifi_open">Public Wi-Fi (Open &amp; Unencrypted)</option>
+        <option value="unknown">Unknown Network</option>
+      </select>
+
+      <label for="n_ip">IP Address (Optional)</label>
+      <input id="n_ip" placeholder="Leave blank to use current client IP">
+
+      <div class="row" style="margin:14px 0">
+        <label style="margin:0;display:flex;gap:7px;align-items:center;color:var(--tx)"><input type="checkbox" id="n_vpn"> VPN or Proxy Detected</label>
+        <label style="margin:0;display:flex;gap:7px;align-items:center;color:var(--tx)"><input type="checkbox" id="n_tls" checked> Valid TLS Encryption</label>
+      </div>
+
+      <div class="chips" style="margin-bottom:12px">
+        <span class="sm mut" style="align-self:center">Presets:</span>
+        <button class="chip" data-c="g" data-act="netPreset" data-t="home_wifi" data-v="0" data-tls="1" data-ip="">Safe Home Wi-Fi</button>
+        <button class="chip" data-c="y" data-act="netPreset" data-t="public_wifi_open" data-v="0" data-tls="1" data-ip="">Open Public Wi-Fi</button>
+        <button class="chip" data-c="r" data-act="netPreset" data-t="mobile_data" data-v="0" data-tls="1" data-ip="203.0.113.7">Malicious IP</button>
+        <button class="chip" data-c="y" data-act="netPreset" data-t="home_wifi" data-v="1" data-tls="1" data-ip="">VPN / Proxy</button>
+      </div>
+
+      <button class="btn" data-act="runNetCheck">${ic("wifi")} Analyze Network Security</button>
+    </div>
+
+    <div id="netRes">
+      <div class="rc">
+        <h3>Network Telemetry</h3>
+        <p class="mut">Click "Analyze Network Security" to evaluate connection vulnerabilities.</p>
+      </div>
+    </div>
+  </div>`);
+};
+
+/* ---------- 6. Transaction History ---------- */
+PAGES.hist=async()=>{
+  setMain(pageHead("Transaction History","Complete log of verified payments with risk breakdown")+`<p class="mut">Loading transaction history...</p>`);
+  const tx=await api("/me/transactions?limit=100");
+  setMain(pageHead("Transaction History","Complete log of verified payments with risk breakdown")+`
+  <div class="panel tw">
+    ${tx.length?`
+      <table>
+        <thead>${th("Time","To Payee","Amount","Risk","Verdict","Status","Action")}</thead>
+        <tbody>
+          ${tx.map((t,i)=>`
+            <tr>
+              <td class="mut sm">${dt(t.ts)}</td>
+              <td class="mono"><b>${esc(t.vpa)}</b></td>
+              <td><b>${inr(t.amount)}</b></td>
+              <td><span class="pill ${t.risk_score>=70?"stop":(t.risk_score>=35?"hold":"go")}">${Math.round(t.risk_score)}</span></td>
+              <td><span class="pill ${CLS[t.decision]||"stop"}">${WORD[t.decision]||esc(t.decision)}</span></td>
+              <td class="mut sm">${esc(t.status.replaceAll("_"," ").toLowerCase())}</td>
+              <td><button class="btn ghost sm" data-act="histOpen" data-i="${i}">Details</button></td>
+            </tr>
+            <tr id="hd${i}" hidden>
+              <td colspan="7" style="background:var(--p2);padding:14px;border-radius:8px">
+                <div class="grid g2" style="align-items:start">
+                  <div>
+                    <h4 style="margin-bottom:6px">Detection Reasons</h4>
+                    ${whyList(t.reasons)}
+                  </div>
+                  <div>
+                    <h4 style="margin-bottom:6px">Signal Attribution</h4>
+                    ${xai(t.explain)}
+                    <div style="margin-top:12px">
+                      <button class="btn ghost sm bad" data-act="report" data-tx="${esc(t.tx_id)}">Report Receiver as Fraud</button>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `:`<div class="empty"><b>No transactions found</b>Make a payment to see its record here.</div>`}
+  </div>`);
+};
+
+/* ---------- 7. Security & Devices ---------- */
+PAGES.sec=async()=>{
+  setMain(pageHead("Security & Devices","Hardware binding, panic controls, and account limits")+`<p class="mut">Loading security controls...</p>`);
+  const [o,dv]=await Promise.all([api("/me/overview"),api("/me/devices")]);
+  const p=o.profile;
+  setMain(pageHead("Security & Devices","Hardware binding, panic controls, and account limits")+`
+  <div class="grid g2e" style="align-items:start">
+    <div class="panel">
+      <h3>Panic Freeze</h3>
+      <p class="s">Instantly halt all outgoing transactions from your account.</p>
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div>
+          <b id="fzTxt">${p.frozen?"Status: FROZEN (All payments blocked)":"Status: OFF (Normal payments enabled)"}</b>
+          <div class="mut sm">Use this immediately if your phone is lost or stolen.</div>
+        </div>
+        <label class="switch" style="margin:0"><input type="checkbox" id="sFreeze" ${p.frozen?"checked":""} data-act="freezeToggle" aria-label="Panic freeze switch"><span></span></label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Daily Spending Limit</h3>
+      <p class="s">Maximum allowable spending per day. Current spent: <b>${inr(o.spent_today)}</b>.</p>
+      <div class="row">
+        <input id="lim" type="number" min="100" max="1000000" value="${p.daily_limit}" style="max-width:200px" aria-label="Daily limit">
+        <button class="btn" data-act="saveLimit">Save Limit</button>
+      </div>
+      <p class="err" id="limErr"></p>
+    </div>
+
+    <div class="panel">
+      <h3>Trusted Devices &amp; SIM Binding</h3>
+      <p class="s">Registered hardware authorized to make payments without elevated verification.</p>
+      ${dv.map(d=>`
+        <div class="fi" style="grid-template-columns:1fr auto">
+          <div>
+            <b>${esc(d.label)}</b>
+            <small class="mono">${esc(d.device_id)} &bull; SIM: ${esc(d.sim_serial)}</small>
+            <small class="mut">Added ${dt(d.created_at)}</small>
+          </div>
+          ${d.trusted?`<button class="btn ghost sm bad" data-act="rmDev" data-id="${d.id}">Revoke</button>`:`<span class="pill grey">revoked</span>`}
+        </div>
+      `).join("")}
+      <details style="margin-top:14px">
+        <summary>Trust This Browser</summary>
+        <label for="td_label">Device Name</label><input id="td_label" value="${esc(navigator.platform||"This Browser")}">
+        <label for="td_pw">Confirm Password</label><input id="td_pw" type="password" autocomplete="current-password">
+        <button class="btn" style="margin-top:10px" data-act="trustDev">Trust Current Browser</button>
+        <p class="err" id="tdErr"></p>
+      </details>
+    </div>
+
+    <div class="panel">
+      <h3>Change Password</h3>
+      <p class="s">Update your password securely using PBKDF2 hashing.</p>
+      <label for="cp_old">Current Password</label><input id="cp_old" type="password" autocomplete="current-password">
+      <label for="cp_new">New Password</label><input id="cp_new" type="password" autocomplete="new-password">
+      <button class="btn" style="margin-top:12px" data-act="chgPw">Update Password</button>
+      <p class="err" id="cpErr"></p>
+    </div>
+  </div>`);
+};
+
+/* ---------- 8. Blockchain Ledger ---------- */
+PAGES.ledger=async()=>{
+  const adm=S.acc&&S.acc.role==="admin";
+  setMain(pageHead("Blockchain Ledger","Tamper-evident proof-of-work chain securing every payment verdict")+`<p class="mut">Verifying cryptographic chain...</p>`);
+  const j=await api("/ledger?limit=40"),v=j.verification,b=[...j.blocks].reverse();
+  setMain(pageHead("Blockchain Ledger","Tamper-evident proof-of-work chain securing every payment verdict")+`
+  <div class="panel">
+    <div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div>
+        <div class="row" style="gap:10px;margin-bottom:6px">
+          <span class="pill ${v.valid?"go":"stop"}" style="font-size:14px;padding:4px 14px">
+            ${v.valid?"LEDGER INTACT: "+v.length+" BLOCKS VERIFIED":"CHAIN INTEGRITY COMPROMISED"}
+          </span>
+        </div>
+        <p class="s" style="margin:0">${esc(v.reason)} ${v.broken_at!==null?`&bull; Tamper detected at Block #<b>${v.broken_at}</b>`:""}</p>
+        <p class="mut sm" style="margin:4px 0 0">Privacy guarantee: Zero account numbers, UPI PINs, or phone numbers are written to the chain.</p>
+      </div>
+      <div class="row">
+        <button class="btn ghost sm" data-act="go" data-p="ledger">Re-check Chain</button>
+        ${adm?`<button class="btn ghost sm bad" data-act="tamper">Simulate Tampering</button><button class="btn ghost sm" data-act="resetDemo">Reset Demo Data</button>`:""}
+      </div>
+    </div>
+    <div class="chain" style="margin-top:16px">
+      ${b.map((k,i)=>`
+        ${i?`<div class="lk ${v.broken_at===k.idx?"x":""}"></div>`:""}
+        <div class="blk ${v.broken_at===k.idx?"x":""}">
+          <b>#${k.idx}</b> <span class="pill sm ${k.status.includes("BLOCK")||k.status.includes("FRAUD")?"stop":"go"}">${esc(k.status.replaceAll("_"," ").toLowerCase())}</span>
+          <code>${esc(k.hash.slice(0,18))}...</code>
+          <div class="mut sm" style="margin-top:6px">Risk: ${k.risk_score} &bull; Nonce: ${k.nonce}</div>
+          <div class="mut sm">${dt(k.ts)}</div>
+        </div>
+      `).join("")}
+    </div>
+  </div>`);
+};
+
+/* ---------- 9. Attack Replay Lab ---------- */
+PAGES.lab=async()=>{
+  setMain(pageHead("Attack Replay Lab","Safe adversarial simulation sandbox for testing fraud vectors")+`<p class="mut">Initializing attack lab...</p>`);
+  const [scData,histData]=await Promise.all([api("/lab/scenarios",undefined,"GET"),api("/lab/history",undefined,"GET")]);
+  S.lab.scenarios=scData.scenarios||[];
+  const scMap={};S.lab.scenarios.forEach(s=>scMap[s.id]=s);
+  if(!scMap[S.lab.curr]&&S.lab.scenarios.length)S.lab.curr=S.lab.scenarios[0].id;
+  renderLabPage(histData.history||[]);
+};
+
+function renderLabPage(history=[]){
+  const sc=S.lab.scenarios.find(s=>s.id===S.lab.curr)||S.lab.scenarios[0]||{};
+  const sim=S.lab.sim;
+  const isAdm=S.acc&&S.acc.role==="admin";
+
+  setMain(pageHead("Attack Replay Lab","Safe adversarial simulation sandbox with side-by-side normal vs attack comparison",
+    `<span class="lab-badge">${ic("shield")} SAFE SIMULATION</span>`)+
+    (isAdm?adminSubNav("lab"):"")+`
+  
+  <div class="panel" style="background:linear-gradient(180deg,#0a252b,#0c2227);border-color:var(--line2);margin-bottom:18px">
+    <div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div>
+        <h3 style="display:flex;align-items:center;gap:8px">${ic("zap")} Select Adversarial Attack Vector</h3>
+        <p class="s">Choose a realistic fraud scenario to test the multi-layer pipeline and Random Forest model safely.</p>
+      </div>
+      <button class="btn sm ghost" data-act="labResetHistory">${ic("trash")} Clear History</button>
+    </div>
+    
+    <div class="lab-grid" style="margin-top:12px">
+      ${S.lab.scenarios.map(s=>`
+        <div class="sc-card ${s.id===S.lab.curr?"active":""}" data-act="selScenario" data-id="${esc(s.id)}">
+          <div class="row" style="justify-content:space-between">
+            <span class="pill ${s.severity==="CRITICAL"?"stop":"hold"}">${esc(s.severity)}</span>
+            <span class="mono sm mut">${esc(s.target_layer.split(":")[0])}</span>
+          </div>
+          <h4>${esc(s.name)}</h4>
+          <p>${esc(s.description)}</p>
+          <div class="meta">
+            <span>Expected Action:</span>
+            <span class="pill sm stop">${esc(s.expected_verdict)}</span>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  </div>
+
+  <div class="panel" style="margin-bottom:18px">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <div>
+        <h3 style="font-size:18px">Scenario: <span style="color:var(--sig)">${esc(sc.name)}</span></h3>
+        <p class="s" style="margin:2px 0 0">${esc(sc.technique)} &bull; ${esc(sc.target_layer)}</p>
+      </div>
+      <div class="row">
+        <button class="btn ghost sm" data-act="resetSim" ${sim?"":"disabled"}>${ic("refresh")} Reset</button>
+        <button class="btn lg" id="btnRunLab" data-act="runLabSim" style="box-shadow:0 0 16px rgba(52,195,189,.3)">
+          ${ic("play")} Run Attack Replay Simulation
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="labLaneBox" style="margin-bottom:18px">${laneHTML()}</div>
+
+  <div id="labResultContainer">
+    ${sim?renderLabSimulationView(sim):`
+      <div class="card" style="text-align:center;padding:40px 20px;border-style:dashed;border-color:var(--line2)">
+        <div style="font-size:36px;margin-bottom:8px">🛡️</div>
+        <h3 style="font-size:20px">No Active Simulation</h3>
+        <p class="mut" style="max-width:500px;margin:8px auto 16px">Click <b>"Run Attack Replay Simulation"</b> to execute the test. The engine will evaluate both a clean baseline and the attack vector simultaneously.</p>
+        <button class="btn" data-act="runLabSim">${ic("play")} Launch ${esc(sc.name)}</button>
+      </div>
+    `}
+  </div>
+
+  <div class="panel" style="margin-top:20px">
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <h3>Simulation Replay History</h3>
+        <p class="s">Audit records of previous adversarial simulation runs.</p>
+      </div>
+      <span class="mono sm mut">${history.length} records</span>
+    </div>
+    <div class="tw">
+      ${history.length?`
+        <table>
+          <thead>${th("Time","Scenario","Attack Score","Verdict","Baseline","Ledger Proof","Action")}</thead>
+          <tbody>
+            ${history.map((h,i)=>`
+              <tr>
+                <td class="mut sm">${dt(h.ts)}</td>
+                <td><b>${esc(h.scenario_name)}</b></td>
+                <td><b style="color:${h.risk_score>=70?"var(--stop)":h.risk_score>=35?"var(--hold)":"var(--go)"}">${h.risk_score}</b>/100</td>
+                <td><span class="pill ${CLS[h.decision]||"stop"}">${WORD[h.decision]||esc(h.decision)}</span></td>
+                <td><span class="pill go">Safe (${h.normal_score})</span></td>
+                <td class="mono sm">Block #${h.ledger_block} (${esc((h.ledger_hash||"").slice(0,8))}...)</td>
+                <td><button class="btn ghost sm" data-act="inspectHistory" data-i="${i}">${ic("shield")} Replay</button></td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `:`<div class="empty"><b>No simulations recorded yet</b>Run an attack scenario to create an audit record.</div>`}
+    </div>
+  </div>`);
+}
+
+function renderLabSimulationView(sim){
+  const norm=sim.normal||{},atk=sim.attack||{};
+  const atkLayers=atk.layer_summary||{};
+  const block=sim.ledger_block||{};
+  const chOk=sim.ledger_status?.valid;
+
+  return `
+  <div class="meter-wrapper">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-weight:700">Risk Comparison: Baseline vs Adversarial Attack</span>
+      <span class="mut sm">Verify &ge; ${S.thr.verify} &bull; Block &ge; ${S.thr.block}</span>
+    </div>
+    <div class="dual-bar">
+      <div class="fill" style="width:${Math.max(3,Math.min(100,atk.risk_score))}%;background:${atk.risk_score>=70?"var(--stop)":atk.risk_score>=35?"var(--hold)":"var(--go)"}"></div>
+    </div>
+    <div class="row" style="justify-content:space-between;font-size:12.5px;margin-top:6px">
+      <span style="color:var(--go)">Normal Transaction: <b>${norm.risk_score||0} / 100</b> (Safe)</span>
+      <span style="color:${atk.risk_score>=70?"var(--stop)":atk.risk_score>=35?"var(--hold)":"var(--go)"}">
+        Simulated Attack: <b>${atk.risk_score||0} / 100</b> (${WORD[atk.decision]||atk.decision})
+      </span>
+    </div>
+  </div>
+
+  <div class="compare-box">
+    <div class="side-card normal">
+      <div class="side-head">
+        <div>
+          <span class="pill go" style="margin-bottom:6px">🟢 NORMAL BASELINE</span>
+          <h3 style="font-size:18px">Authentic User Activity</h3>
+        </div>
+        <div style="text-align:right">
+          <div style="font:800 28px var(--d);color:var(--go)">${norm.risk_score||0}<small style="font-size:13px;color:var(--mut)">/100</small></div>
+          <span class="pill go">CLEARED (ALLOW)</span>
+        </div>
+      </div>
+      <div class="matrix-row"><span>Pay To VPA</span><span class="mono">${esc(norm.vpa||"ramesh.kirana@ybl")}</span></div>
+      <div class="matrix-row"><span>Amount</span><b>${inr(norm.amount||500)}</b></div>
+      <div class="matrix-row"><span>Device &amp; SIM</span><span>Trusted Device &bull; SIM Match</span></div>
+      <div class="matrix-row"><span>Network</span><span>Home Wi-Fi &bull; TLS Verified</span></div>
+      <div class="matrix-row"><span>Behavior AI</span><span>Normal habits &bull; Model Prob: ${((norm.breakdown?.ml_probability||0)*100).toFixed(1)}%</span></div>
+      <div style="margin-top:12px;padding:10px;background:var(--go-b);border-radius:8px;font-size:12.5px;color:var(--go)">
+        <b>System Evaluation:</b> All 5 layers cleared. Transaction permitted immediately.
+      </div>
+    </div>
+
+    <div class="side-card attack">
+      <div class="side-head">
+        <div>
+          <span class="pill stop" style="margin-bottom:6px">🔴 ADVERSARIAL ATTACK</span>
+          <h3 style="font-size:18px">${esc(sim.scenario?.name||"Simulated Attack")}</h3>
+        </div>
+        <div style="text-align:right">
+          <div style="font:800 28px var(--d);color:${atk.risk_score>=70?"var(--stop)":"var(--hold)"}">
+            ${atk.risk_score||0}<small style="font-size:13px;color:var(--mut)">/100</small>
+          </div>
+          <span class="pill ${CLS[atk.decision]||"stop"}">${WORD[atk.decision]||atk.decision}</span>
+        </div>
+      </div>
+      <div class="matrix-row"><span>Target Payee</span><span class="mono">${esc(atk.vpa||"")}</span></div>
+      <div class="matrix-row"><span>Amount</span><b>${inr(atk.amount||0)}</b></div>
+      <div class="matrix-row"><span>Device &amp; SIM</span><span>${esc(sim.attack_payload?.device_id||"Unknown")} &bull; ${esc(sim.attack_payload?.sim_serial||"Unknown")}</span></div>
+      <div class="matrix-row"><span>Vector Payload</span><span class="mono sm" style="overflow-wrap:anywhere">${esc(sim.attack_payload?.payment_link||sim.attack_payload?.qr_payload||"Direct Transaction")}</span></div>
+      <div class="matrix-row"><span>Triggered Flags</span><span>${atk.reasons?.length||0} security alerts &bull; ${atk.breakdown?.overrides?.length||0} override(s)</span></div>
+      <div style="margin-top:12px;padding:10px;background:var(--stop-b);border-radius:8px;font-size:12.5px;color:var(--stop)">
+        <b>Enforcement Action:</b> ${atk.decision==="BLOCK"?"PAYMENT BLOCKED - Security alert dispatched.":"ADDITIONAL VERIFICATION (OTP) REQUIRED."}
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <h3>5-Layer Checkpoint Interception Matrix</h3>
+    <p class="s">Inspection of how each gate evaluated this attack vector.</p>
+    <div class="tw">
+      <table class="layers-table">
+        <thead>${th("Security Layer","Inspection Scope","Status","Risk","Triggered Anomaly / Red Flag")}</thead>
+        <tbody>
+          ${Object.entries(atkLayers).map(([k,v])=>`
+            <tr>
+              <td><b>${esc(v.name)}</b></td>
+              <td class="mut sm">${k==="device"?"Device binding & SIM serial match":k==="qr"?"VPA format, Name tampering, Amount injection":k==="link"?"Phishing keywords, Bad TLDs, Punycode":k==="network"?"Bad IP list, Tor exits, VPNs, TLS":k==="behavior"?"Scikit-learn Random Forest (13 features)":""}</td>
+              <td><span class="pill ${v.status==="INTERCEPTED"?"stop":v.status==="FLAGGED"?"hold":v.status==="PASSED"?"go":"grey"}">${esc(v.status)}</span></td>
+              <td><b>${Math.round((v.risk||0)*100)}%</b></td>
+              <td>${v.reasons&&v.reasons.length?v.reasons.map(r=>`<div>&bull; ${esc(r)}</div>`).join(""):`<span class="mut sm">No anomaly</span>`}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid g2" style="margin-top:16px">
+    <div class="panel">
+      <h3>Explainable AI Attribution</h3>
+      <p class="s">Exact points added to the risk score by each signal.</p>
+      ${xai(atk.explain)}
+    </div>
+
+    <div class="panel">
+      <h3>Cryptographic Ledger Proof</h3>
+      <p class="s">Proof-of-work tamper-evident anchor sealed in the ledger.</p>
+      <div class="matrix-row"><span>Simulation ID</span><span class="mono">${esc(sim.sim_id||"")}</span></div>
+      <div class="matrix-row"><span>Ledger Block</span><b>#${block.index??"-"}</b></div>
+      <div class="matrix-row"><span>Block Hash</span><code class="mono sm" style="overflow-wrap:anywhere">${esc(block.hash||sim.audit_hash||"")}</code></div>
+      <div class="matrix-row"><span>Ledger Integrity</span><span class="pill ${chOk?"go":"stop"}">${chOk?"Intact: All Blocks Verified":"Integrity Compromised"}</span></div>
+    </div>
+  </div>`;
+}
+
+/* ---------- 10. Admin: Dashboard Overview ---------- */
+const kpi=(l,v,s="",c="")=>`<div class="kpi ${c}"><span>${l}</span><b>${v}</b><small>${s}</small></div>`;
+function hoursChart(h){
+  const mx=Math.max(1,...h.map(x=>x.ALLOW+x.VERIFY+x.BLOCK));
+  return `<div class="hrs">${h.map(x=>`<div title="${x.ALLOW} cleared, ${x.VERIFY} verify, ${x.BLOCK} blocked" style="height:${Math.max(2,(x.ALLOW+x.VERIFY+x.BLOCK)/mx*100)}%"><i class="a" style="flex:${x.ALLOW}"></i><i class="v" style="flex:${x.VERIFY}"></i><i class="b" style="flex:${x.BLOCK}"></i></div>`).join("")}</div><div class="hl"><span>24 hours ago</span><span>now</span></div>`;
+}
+
+PAGES.admin=async()=>{
+  setMain(pageHead("Admin Dashboard","Fraud monitoring and system telemetry")+adminSubNav("admin")+`<p class="mut">Loading telemetry...</p>`);
+  const paint=async()=>{
+    const s=await api("/admin/stats");
+    S.queue=s.queue;paintBadge();
+    if(S.page!=="admin")return;
+    const tot=s.total_transactions??s.total;
+    const frauds=s.detected_frauds??(s.blocked+s.verify);
+    const blk=s.blocked_transactions??s.blocked;
+    const qr=s.qr_scans??0;
+    const rate=s.fraud_detection_rate??(tot?((frauds/tot)*100).toFixed(1):0);
+
+    $("aK").innerHTML=
+      kpi("Total Transactions",tot,`${s.allowed} cleared, ${s.verify} verified`)+
+      kpi("Detected Frauds",frauds,`${blk} blocked payments`,"stop")+
+      kpi("Blocked Amount",inr(s.money_protected),"Total money protected","stop")+
+      kpi("QR Scans",qr,"Real-time analyzed QRs","go")+
+      kpi("Fraud Detection Rate",`${rate}%`,"Flagged suspicious / total","hold")+
+      kpi("Active Users",s.users,`${s.frozen} frozen account(s)`,"go")+
+      kpi("Avg Risk Score",`${s.avg_risk}/100`,"Platform risk index")+
+      kpi("Ledger Integrity",s.ledger.valid?`${s.ledger.length} Blocks`:"Broken",s.ledger.valid?"Cryptographically intact":"Tamper detected",s.ledger.valid?"go":"stop");
+
+    $("aH").innerHTML=hoursChart(s.hours);
+    $("aT").innerHTML=s.top_receivers.length?`<table><thead>${th("Receiver UPI ID","Flagged Txns","Avg Risk")}</thead><tbody>${s.top_receivers.map(r=>`<tr><td class="mono">${esc(r.vpa)}</td><td><b>${r.n}</b></td><td><span class="pill ${r.avg_risk>=70?"stop":"hold"}">${r.avg_risk}</span></td></tr>`).join("")}</tbody></table>`:`<p class="mut sm">No flagged receivers yet.</p>`;
+    $("aL").innerHTML=`<div class="row" style="justify-content:space-between"><div><span class="pill ${s.ledger.valid?"go":"stop"}">${s.ledger.valid?"Ledger Intact: "+s.ledger.length+" Blocks":"Compromised at Block #"+s.ledger.broken_at}</span><div class="mut sm" style="margin-top:6px">${esc(s.ledger.reason)}</div></div><button class="btn sm" data-act="verifyLedger">${ic("chain")} Verify Now</button></div>`;
+    return s;
+  };
+
+  setMain(pageHead("Admin Dashboard","Fraud monitoring and system telemetry")+adminSubNav("admin")+`
+  <div class="grid g4" id="aK"></div>
+
+  <div class="grid g2" style="margin-top:16px">
+    <div class="panel">
+      <h3>Live Activity Feed</h3>
+      <p class="s">Real-time platform payments telemetry.</p>
+      <div class="feed" id="aF"><div class="empty"><b>Waiting for payments</b>Make a payment or replay an attack in AI Lab.</div></div>
+    </div>
+    
+    <div style="display:grid;gap:16px">
+      <div class="panel">
+        <h3>24-Hour Transaction Volume</h3>
+        <p class="s">Green cleared, amber verify, red blocked.</p>
+        <div id="aH"></div>
+      </div>
+      <div class="panel">
+        <h3>Top Flagged Receivers</h3>
+        <div id="aT" class="tw"></div>
+      </div>
+      <div class="panel">
+        <h3>Cryptographic Ledger Status</h3>
+        <div id="aL"></div>
+      </div>
+    </div>
+  </div>`);
+
+  const s=await paint();
+  if(s&&s.feed&&s.feed.length){$("aF").innerHTML=[...s.feed].reverse().map(e=>feedItem({...e,replay:true},true)).join("")}
+  let t=null;
+  onLive(e=>{
+    if(e.replay)return;
+    if(e.type==="tx"){
+      const f=$("aF");if(!f)return;f.querySelector(".empty")?.remove();f.insertAdjacentHTML("afterbegin",feedItem(e,true));
+      clearTimeout(t);t=setTimeout(paint,1200);
+    } else if(e.type==="admin")paint();
+  });
+};
+PAGES.a_over=PAGES.admin;
+
+/* ---------- 11. Admin: Transaction Monitoring ---------- */
+PAGES.a_tx=async()=>{
+  setMain(pageHead("Transaction Monitoring","Searchable and filterable table of all platform transactions")+adminSubNav("a_tx")+`<p class="mut">Loading transactions...</p>`);
+  const qStr=S.txQuery||"",dec=S.txDec||"",stat=S.txStat||"";
+  const params=new URLSearchParams();
+  if(qStr)params.append("search",qStr);
+  if(dec)params.append("decision",dec);
+  if(stat)params.append("status",stat);
+  params.append("limit","100");
+  const txs=await api("/admin/transactions?"+params.toString());
+
+  setMain(pageHead("Transaction Monitoring","Searchable and filterable table of all platform transactions")+adminSubNav("a_tx")+`
+  <div class="filter-bar">
+    <div style="flex:1;min-width:200px"><input id="txSearch" placeholder="Search by Tx ID, UPI ID, or Customer..." value="${esc(qStr)}"></div>
+    <div>
+      <select id="txDec" style="width:auto">
+        <option value="">All Decisions</option>
+        <option value="ALLOW" ${dec==="ALLOW"?"selected":""}>Cleared (ALLOW)</option>
+        <option value="VERIFY" ${dec==="VERIFY"?"selected":""}>Verify (VERIFY)</option>
+        <option value="BLOCK" ${dec==="BLOCK"?"selected":""}>Blocked (BLOCK)</option>
+      </select>
+    </div>
+    <div>
+      <select id="txStat" style="width:auto">
+        <option value="">All Statuses</option>
+        <option value="COMPLETED" ${stat==="COMPLETED"?"selected":""}>Completed</option>
+        <option value="PENDING_VERIFICATION" ${stat==="PENDING_VERIFICATION"?"selected":""}>Pending Verification</option>
+        <option value="BLOCKED" ${stat==="BLOCKED"?"selected":""}>Blocked</option>
+      </select>
+    </div>
+    <button class="btn sm" data-act="txFilter">Search</button>
+    <button class="btn ghost sm" data-act="txReset">Reset</button>
+    <span class="mut sm" style="margin-left:auto">${txs.length} record(s) found</span>
+  </div>
+  
+  <div class="panel tw">
+    ${txs.length?`
+      <table>
+        <thead>${th("Tx ID","Timestamp","Customer","Receiver UPI ID","Amount","Risk Score","Verdict","Status","Details")}</thead>
+        <tbody>
+          ${txs.map((t,i)=>`
+            <tr>
+              <td class="mono"><b>${esc(t.tx_id)}</b></td>
+              <td class="mut sm">${dt(t.ts)}</td>
+              <td><b>${esc(t.uname||t.user_id||"Anonymous")}</b><div class="mut sm">${esc(t.user_id||"")}</div></td>
+              <td class="mono">${esc(t.vpa)}</td>
+              <td><b>${inr(t.amount)}</b></td>
+              <td><span class="pill ${t.risk_score>=70?"stop":(t.risk_score>=35?"hold":"go")}">${Math.round(t.risk_score)}</span></td>
+              <td><span class="pill ${CLS[t.decision]||"stop"}">${WORD[t.decision]||t.decision}</span></td>
+              <td class="mut sm">${esc((t.status||"").replaceAll("_"," ").toLowerCase())}</td>
+              <td><button class="btn ghost sm" data-act="txDetail" data-i="${i}">Inspect</button></td>
+            </tr>
+            <tr id="txd_${i}" hidden>
+              <td colspan="9" style="background:var(--p2);padding:14px;border-radius:8px">
+                <div class="grid g2" style="align-items:start">
+                  <div><h4>Security Detection Reasons</h4>${whyList(t.reasons)}</div>
+                  <div>
+                    <h4>Explainable AI (XAI) Attribution</h4>
+                    ${xai(t.explain)}
+                    <div class="mut sm" style="margin-top:10px">Review State: <b>${esc(t.review||"None")}</b> ${t.label!==null?`(Training Label: ${t.label})`:""}</div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `:`<div class="empty"><b>No transactions found</b>Try clearing search filters.</div>`}
+  </div>`);
+};
+
+/* ---------- 12. Admin: Fraud Alerts ---------- */
+PAGES.a_alerts=async()=>{
+  setMain(pageHead("Fraud Alerts","Suspicious transactions flagged for administrative review")+adminSubNav("a_alerts")+`<p class="mut">Loading fraud alerts...</p>`);
+  const sf=S.alertStatus||"open",sev=S.alertSev||"all";
+  const alerts=await api(`/admin/alerts?status=${encodeURIComponent(sf)}&severity=${encodeURIComponent(sev)}&limit=100`);
+  S.queue=alerts.filter(a=>!a.reviewed).length;
+  paintBadge();
+  const highCnt=alerts.filter(a=>a.severity==="HIGH").length;
+  const medCnt=alerts.filter(a=>a.severity==="MEDIUM").length;
+
+  setMain(pageHead("Fraud Alerts","Suspicious transactions flagged for administrative review")+adminSubNav("a_alerts")+`
+  <div class="filter-bar">
+    <div><span class="mut sm">Filter:</span></div>
+    <button class="subnav-btn ${sf==="open"?"active":""}" data-act="alertFilter" data-s="open" data-v="${sev}">Open Alerts (${alerts.filter(a=>!a.reviewed).length})</button>
+    <button class="subnav-btn ${sf==="reviewed"?"active":""}" data-act="alertFilter" data-s="reviewed" data-v="${sev}">Reviewed</button>
+    <button class="subnav-btn ${sf==="all"?"active":""}" data-act="alertFilter" data-s="all" data-v="${sev}">All</button>
+    <div style="margin-left:12px"><span class="mut sm">Severity:</span></div>
+    <select id="alSev" style="width:auto" onchange="S.alertSev=this.value;PAGES.a_alerts()">
+      <option value="all" ${sev==="all"?"selected":""}>All Severities</option>
+      <option value="HIGH" ${sev==="HIGH"?"selected":""}>High (${highCnt})</option>
+      <option value="MEDIUM" ${sev==="MEDIUM"?"selected":""}>Medium (${medCnt})</option>
+      <option value="LOW" ${sev==="LOW"?"selected":""}>Low</option>
+    </select>
+    <span class="mut sm" style="margin-left:auto">${alerts.length} alert(s)</span>
+  </div>
+
+  <div class="grid g2e" id="alertGrid">
+    ${alerts.length?alerts.map(t=>`
+      <div class="panel" id="alertCard_${esc(t.tx_id)}" style="border-left:4px solid ${t.severity==="HIGH"?"var(--stop)":(t.severity==="MEDIUM"?"var(--hold)":"var(--sig)")}">
+        <div class="row" style="justify-content:space-between">
+          <span class="pill ${t.severity==="HIGH"?"stop":(t.severity==="MEDIUM"?"hold":"sig")}">SEVERITY: ${esc(t.severity)}</span>
+          <span class="mut sm">${dt(t.ts)}</span>
+        </div>
+        <div style="margin:10px 0 6px">
+          <b style="font-size:17px">${inr(t.amount)}</b> from <b>${esc(t.uname||t.user_id||"Unknown")}</b> to <span class="mono" style="color:var(--sig)">${esc(t.vpa)}</span>
+        </div>
+        <div class="row" style="gap:8px;margin-bottom:8px">
+          <span class="pill ${CLS[t.decision]||"stop"}">${WORD[t.decision]||t.decision}</span>
+          <span class="mut sm">Risk Score: <b>${Math.round(t.risk_score)}/100</b></span>
+          <span class="mono sm mut">Tx: ${esc(t.tx_id)}</span>
+        </div>
+        <div style="margin-top:10px">
+          <b class="sm">Detection Reasons:</b>
+          ${whyList(t.reasons)}
+        </div>
+        ${t.explain&&t.explain.length?`<div style="margin-top:6px">${xai(t.explain.slice(0,3))}</div>`:""}
+        <div class="row" style="margin-top:14px;padding-top:10px;border-top:1px solid var(--line);justify-content:space-between">
+          <div>
+            ${t.reviewed?`<span class="pill ${t.review==="fraud"?"stop":(t.review==="legit"?"go":"sig")}">Reviewed: ${esc(t.review)}</span>`:`<span class="pill hold">Pending Review</span>`}
+          </div>
+          <div class="row" style="gap:6px">
+            <button class="btn bad sm" data-act="reviewAlert" data-tx="${esc(t.tx_id)}" data-v="fraud">Confirm Fraud</button>
+            <button class="btn ok sm" data-act="reviewAlert" data-tx="${esc(t.tx_id)}" data-v="legit">Mark Genuine</button>
+            <button class="btn ghost sm" data-act="reviewAlert" data-tx="${esc(t.tx_id)}" data-v="reviewed">Mark Reviewed</button>
+          </div>
+        </div>
+      </div>
+    `).join(""):`<div class="panel" style="grid-column:1/-1"><div class="empty"><b>No Alerts Found</b>No transactions matching the selected criteria.</div></div>`}
+  </div>`);
+};
+PAGES.a_queue=PAGES.a_alerts;
+
+/* ---------- 13. Admin: User Management ---------- */
+PAGES.a_users=async()=>{
+  setMain(pageHead("User Management","Customer accounts, status controls, and role administration")+adminSubNav("a_users")+`<p class="mut">Loading user directory...</p>`);
+  const us=await api("/admin/users");
+  const q=(S.userFilter||"").toLowerCase();
+  const filtered=q?us.filter(u=>(u.name||"").toLowerCase().includes(q)||(u.username||"").toLowerCase().includes(q)||(u.email||"").toLowerCase().includes(q)||(u.user_id||"").toLowerCase().includes(q)):us;
+
+  setMain(pageHead("User Management","Customer accounts, status controls, and role administration")+adminSubNav("a_users")+`
+  <div class="filter-bar">
+    <div style="flex:1;min-width:240px">
+      <input id="userSearch" placeholder="Search customer by name, username, email, ID..." value="${esc(S.userFilter||"")}" oninput="S.userFilter=this.value;PAGES.a_users()">
+    </div>
+    <span class="mut sm">${filtered.length} of ${us.length} customer(s)</span>
+  </div>
+
+  <div class="panel tw">
+    ${filtered.length?`
+      <table>
+        <thead>${th("Customer Details","User ID","Status","Payments","Blocked","Last Sign-in","Admin Actions")}</thead>
+        <tbody>
+          ${filtered.map(u=>{
+            const isActive=!u.disabled;
+            return `<tr>
+              <td><b>${esc(u.name)}</b><div class="mut sm">${esc(u.username)} &bull; ${esc(u.email)}</div></td>
+              <td class="mono">${esc(u.user_id||"-")}</td>
+              <td>
+                ${u.role==="admin"?`<span class="pill sig">admin</span> `:""}
+                ${u.disabled?`<span class="pill grey">deactivated</span> `:""}
+                ${u.frozen?`<span class="pill stop">frozen</span> `:""}
+                ${u.locked?`<span class="pill hold">locked</span> `:""}
+                ${isActive&&!u.frozen&&!u.locked&&u.role!=="admin"?`<span class="pill go">active</span>`:""}
+              </td>
+              <td>${u.txn_count??0} <small class="mut">(${inr(u.avg_amount)} avg)</small></td>
+              <td><span class="pill ${u.blocked>0?"stop":"grey"}">${u.blocked??0}</span></td>
+              <td class="mut sm">${dt(u.last_login)}</td>
+              <td>
+                <div class="row" style="gap:6px">
+                  ${u.id!==S.acc.id?`
+                    <button class="btn ${isActive?"bad":"ok"} sm" data-act="uStatus" data-id="${u.id}" data-active="${isActive?"0":"1"}">${isActive?"Deactivate":"Activate"}</button>
+                    <button class="btn ghost sm" data-act="uAct" data-id="${u.id}" data-k="role" data-v="${u.role==="admin"?"user":"admin"}">${u.role==="admin"?"Make Customer":"Make Admin"}</button>
+                  `:""}
+                  ${u.user_id?`<button class="btn ghost sm" data-act="uAct" data-id="${u.id}" data-k="freeze" data-v="${u.frozen?0:1}">${u.frozen?"Unfreeze":"Freeze"}</button>`:""}
+                  ${u.locked?`<button class="btn ghost sm" data-act="uAct" data-id="${u.id}" data-k="unlock">Unlock</button>`:""}
+                </div>
+              </td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+    `:`<div class="empty"><b>No customers found</b>No records matched "${esc(q)}".</div>`}
+  </div>`);
+};
+
+/* ---------- 14. Admin: AI Model Monitoring ---------- */
+PAGES.a_ai=async()=>{
+  setMain(pageHead("AI Model Monitoring","Scikit-learn Random Forest evaluation, feature importance, and live statistics")+adminSubNav("a_ai")+`<p class="mut">Loading AI telemetry...</p>`);
+  const [data,st]=await Promise.all([api("/admin/ai-monitoring"),api("/admin/settings")]);
+  const uModel=data.model_used||{};
+  const bModel=data.model_baseline||{};
+  const pStats=data.prediction_statistics||{};
+  const fi=data.feature_importance||{};
+  const fmx=Math.max(0.001,...Object.values(fi));
+  const cm=uModel["confusion_matrix [[TN,FP],[FN,TP]]"]||[[14232,31],[156,581]];
+
+  setMain(pageHead("AI Model Monitoring","Scikit-learn Random Forest evaluation, feature importance, and live statistics")+adminSubNav("a_ai")+`
+  <div class="panel" style="margin-bottom:16px">
+    <div class="row" style="justify-content:space-between;margin-bottom:6px">
+      <div class="row" style="gap:10px">
+        <span class="pill go">RANDOM FOREST CLASSIFIER</span>
+        <b>${esc(uModel.model||"RandomForest (used)")}</b>
+      </div>
+      <div class="row" style="gap:12px;font-size:13px">
+        <span class="mut">Training Samples: <b>${(data.dataset_rows||60000).toLocaleString()}</b></span>
+        <span class="mut">Fraud Base Rate: <b>${((data.training_fraud_rate||0.0491)*100).toFixed(2)}%</b></span>
+      </div>
+    </div>
+    <p class="s" style="margin:0">Ensemble of 200 balanced decision trees trained on 13 behavioral, network, and environmental fraud signals.</p>
+  </div>
+
+  <div class="grid g4" style="margin-bottom:16px">
+    <div class="kpi go"><span>Precision (Random Forest)</span><b>${uModel.precision!==undefined?((uModel.precision)*100).toFixed(1)+"%":"94.9%"}</b><small>Baseline: ${bModel.precision?((bModel.precision)*100).toFixed(1)+"%":"58.3%"}</small></div>
+    <div class="kpi go"><span>Recall / Sensitivity</span><b>${uModel.recall!==undefined?((uModel.recall)*100).toFixed(1)+"%":"78.8%"}</b><small>Baseline: ${bModel.recall?((bModel.recall)*100).toFixed(1)+"%":"79.5%"}</small></div>
+    <div class="kpi go"><span>F1-Score</span><b>${uModel.f1!==undefined?((uModel.f1)*100).toFixed(1)+"%":"86.1%"}</b><small>Baseline: ${bModel.f1?((bModel.f1)*100).toFixed(1)+"%":"67.3%"}</small></div>
+    <div class="kpi sig"><span>ROC-AUC Score</span><b>${uModel.roc_auc!==undefined?((uModel.roc_auc)*100).toFixed(1)+"%":"89.2%"}</b><small>PR-AUC: ${uModel.pr_auc?((uModel.pr_auc)*100).toFixed(1)+"%":"81.6%"}</small></div>
+  </div>
+
+  <div class="grid g2" style="margin-bottom:16px;align-items:start">
+    <div class="panel">
+      <h3>Confusion Matrix (Test Validation Set)</h3>
+      <p class="s">Actual vs Predicted classification results on hold-out validation set.</p>
+      <div class="cm-grid">
+        <div class="cm-cell tn">
+          <span>True Negatives (TN)</span>
+          <b style="color:var(--go)">${(cm[0][0]||0).toLocaleString()}</b>
+          <span>Genuine payments allowed</span>
+        </div>
+        <div class="cm-cell fp">
+          <span>False Positives (FP)</span>
+          <b style="color:var(--hold)">${(cm[0][1]||0).toLocaleString()}</b>
+          <span>Genuine falsely flagged</span>
+        </div>
+        <div class="cm-cell fn">
+          <span>False Negatives (FN)</span>
+          <b style="color:var(--stop)">${(cm[1][0]||0).toLocaleString()}</b>
+          <span>Fraud payments missed</span>
+        </div>
+        <div class="cm-cell tp">
+          <span>True Positives (TP)</span>
+          <b style="color:var(--sig)">${(cm[1][1]||0).toLocaleString()}</b>
+          <span>Fraud payments blocked</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Live Database Prediction Statistics</h3>
+      <p class="s">Real statistics computed from live database transactions.</p>
+      <div style="display:grid;gap:8px;font-size:13px">
+        <div class="matrix-row"><span>Total Predictions</span><b>${pStats.total_predictions||0}</b></div>
+        <div class="matrix-row"><span>Allowed (Cleared)</span><span class="pill go">${pStats.allowed_count||0}</span></div>
+        <div class="matrix-row"><span>Verified (OTP)</span><span class="pill hold">${pStats.verify_count||0}</span></div>
+        <div class="matrix-row"><span>Blocked</span><span class="pill stop">${pStats.blocked_count||0}</span></div>
+        <div class="matrix-row"><span>Platform Detection Rate</span><b>${pStats.detection_rate||0}%</b></div>
+        <div class="matrix-row"><span>Risk Score Range</span><span>Avg: <b>${pStats.average_risk_score||0}</b> (Min: ${pStats.min_risk_score||0}, Max: ${pStats.max_risk_score||0})</span></div>
+        <div class="matrix-row"><span>Feedback Training Rows</span><span><b>${pStats.feedback_rows||0}</b> (${pStats.analyst_confirmed_fraud||0} fraud, ${pStats.analyst_marked_legit||0} genuine)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid g2" style="align-items:start">
+    <div class="panel">
+      <h3>Feature Importance (13 Signals)</h3>
+      <p class="s">Relative contribution of each signal in Random Forest decision trees.</p>
+      ${Object.entries(fi).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
+        <div class="xr" style="grid-template-columns:170px 1fr 52px">
+          <span>${esc(k.replaceAll("_"," "))}</span>
+          <div class="bar"><i style="width:${v/fmx*100}%"></i></div>
+          <span>${(v*100).toFixed(1)}%</span>
+        </div>
+      `).join("")}
+    </div>
+
+    <div style="display:grid;gap:16px">
+      <div class="panel">
+        <h3>Decision Thresholds</h3>
+        <p class="s">Tune the fraud engine threshold gates dynamically.</p>
+        <label for="s_v">Ask for OTP from score: <b id="s_vv">${st.thresh_verify}</b></label>
+        <input type="range" id="s_v" min="5" max="95" value="${st.thresh_verify}">
+        
+        <label for="s_b">Block payment from score: <b id="s_bv">${st.thresh_block}</b></label>
+        <input type="range" id="s_b" min="10" max="100" value="${st.thresh_block}">
+        
+        <label for="s_h">High-value payment starts at (₹)</label>
+        <input id="s_h" type="number" min="1000" value="${st.high_amount}">
+        
+        <button class="btn" style="margin-top:14px" data-act="saveRules">Apply Thresholds</button>
+        <p class="err" id="sErr"></p>
+      </div>
+
+      <div class="panel">
+        <h3>Human-in-the-Loop Model Retraining</h3>
+        <p class="s">Retrain the Random Forest model using analyst-reviewed transactions.</p>
+        <div class="row">
+          <button class="btn" id="rt" data-act="retrain" ${data.training.running?"disabled":""}>${ic("refresh")} Retrain with Feedback</button>
+          <span class="mut sm" id="rtMsg">${esc(data.training.message)}</span>
+        </div>
+      </div>
+    </div>
+  </div>`);
+
+  const sync=()=>{$("s_vv").textContent=$("s_v").value;$("s_bv").textContent=$("s_b").value};
+  $("s_v").oninput=sync;$("s_b").oninput=sync;
+  onLive(e=>{if(e.type==="admin"&&e.what==="model")PAGES.a_ai()});
+};
+PAGES.a_rules=PAGES.a_ai;
+
+/* ---------- 15. Admin: Ledger Verification ---------- */
+PAGES.a_ledger=async()=>{
+  setMain(pageHead("Ledger Verification","Cryptographic proof-of-work integrity check")+adminSubNav("a_ledger")+`<p class="mut">Verifying cryptographic ledger chain...</p>`);
+  const j=await api("/ledger?limit=50"),v=j.verification,b=[...j.blocks].reverse();
+
+  setMain(pageHead("Ledger Verification","Cryptographic proof-of-work integrity check")+adminSubNav("a_ledger")+`
+  <div class="panel" style="margin-bottom:16px">
+    <div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div>
+        <div class="row" style="gap:10px;margin-bottom:6px">
+          <span class="pill ${v.valid?"go":"stop"}" style="font-size:14px;padding:4px 14px">
+            ${v.valid?"CRYPTOGRAPHICALLY INTACT":"CHAIN INTEGRITY COMPROMISED"}
+          </span>
+          <b>${v.length} Blocks Verified</b>
+        </div>
+        <p class="s" style="margin:0">${esc(v.reason)} ${v.broken_at!==null?`&bull; First invalid block: <b>#${v.broken_at}</b>`:""}</p>
+        <p class="mut sm" style="margin:4px 0 0">Proof of Work Target: <b>3 leading zeroes</b> &bull; Tampering with any past block invalidates all downstream blocks.</p>
+      </div>
+      <div class="row">
+        <button class="btn" data-act="verifyLedgerAction">${ic("check")} Verify Ledger Integrity</button>
+        <button class="btn ghost sm bad" data-act="tamper">Simulate Tampering (Demo)</button>
+        <button class="btn ghost sm" data-act="resetDemo">Reset Demo Data</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Block History &amp; Chain Visualization</h3>
+    <p class="s">Each block seals salted transaction hash, previous block hash, timestamp, and risk score.</p>
+    <div class="chain">
+      ${b.map((k,i)=>`
+        ${i?`<div class="lk ${v.broken_at===k.idx?"x":""}"></div>`:""}
+        <div class="blk ${v.broken_at===k.idx?"x":""}">
+          <b>#${k.idx}</b> <span class="pill sm ${k.status.includes("BLOCK")||k.status.includes("FRAUD")?"stop":(k.status==="GENESIS"?"sig":"go")}">${esc(k.status.replaceAll("_"," ").toLowerCase())}</span>
+          <code title="Block Hash">${esc(k.hash.slice(0,18))}...</code>
+          <div class="mut sm" style="margin-top:6px">Score: ${k.risk_score} &bull; Nonce: ${k.nonce}</div>
+          <div class="mut sm">${dt(k.ts)}</div>
+        </div>
+      `).join("")}
+    </div>
+  </div>`);
+};
+
+/* ---------- 16. Admin: Audit Logs ---------- */
+PAGES.a_audit=async()=>{
+  setMain(pageHead("Admin Audit Logs","Immutable audit trail of administrative and security events")+adminSubNav("a_audit")+`<p class="mut">Loading audit trail...</p>`);
+  const qStr=S.auditSearch||"",actType=S.auditAct||"";
+  const params=new URLSearchParams();
+  if(qStr)params.append("search",qStr);
+  if(actType)params.append("action",actType);
+  params.append("limit","150");
+  const logs=await api("/admin/audit?"+params.toString());
+
+  setMain(pageHead("Admin Audit Logs","Immutable audit trail of administrative and security events")+adminSubNav("a_audit")+`
+  <div class="filter-bar">
+    <div style="flex:1;min-width:220px">
+      <input id="auditSearch" placeholder="Search actor, action, target, or details..." value="${esc(qStr)}">
+    </div>
+    <div>
+      <select id="auditAct" style="width:auto">
+        <option value="">All Action Types</option>
+        <option value="login" ${actType==="login"?"selected":""}>Login &amp; Auth</option>
+        <option value="user" ${actType==="user"?"selected":""}>User Status / Activate</option>
+        <option value="freeze" ${actType==="freeze"?"selected":""}>Freeze / Unfreeze</option>
+        <option value="review" ${actType==="review"?"selected":""}>Alert Reviews</option>
+        <option value="ledger" ${actType==="ledger"?"selected":""}>Ledger Verification</option>
+        <option value="settings" ${actType==="settings"?"selected":""}>Settings &amp; Rules</option>
+        <option value="blacklist" ${actType==="blacklist"?"selected":""}>Blacklist</option>
+      </select>
+    </div>
+    <button class="btn sm" data-act="auditFilter">Filter</button>
+    <button class="btn ghost sm" data-act="auditReset">Reset</button>
+    <span class="mut sm" style="margin-left:auto">${logs.length} log entry(s)</span>
+  </div>
+
+  <div class="panel tw">
+    ${logs.length?`
+      <table>
+        <thead>${th("Timestamp","Actor","Action","Target","Details")}</thead>
+        <tbody>
+          ${logs.map(r=>{
+            const isBad=/failed|freeze|disable|tamper|fraud|locked|deactivated/.test(r.action);
+            const isGood=/login$|activate|legit|unfreeze|unlock/.test(r.action);
+            const pillCol=isBad?"stop":(isGood?"go":"hold");
+            return `<tr>
+              <td class="mut sm">${dt(r.ts)}</td>
+              <td><b>${esc(r.actor)}</b></td>
+              <td><span class="pill ${pillCol}">${esc(r.action.replaceAll("_"," "))}</span></td>
+              <td class="mono">${esc(r.target||"-")}</td>
+              <td class="mut sm">${esc(r.detail||"-")}</td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+    `:`<div class="empty"><b>No audit logs found</b>Try adjusting search or action filters.</div>`}
+  </div>`);
+};
+
+/* ---------- 17. Admin: Blacklist Management ---------- */
+PAGES.a_bl=async()=>{
+  const h=pageHead("Blacklist Management","Known fraudulent receivers automatically blocked platform-wide")+adminSubNav("a_bl");
+  setMain(h+`<p class="mut">Loading blacklist...</p>`);
+  const bl=await api("/admin/blacklist");
+
+  setMain(h+`
+  <div class="grid g2" style="align-items:start">
+    <div class="panel tw">
+      <table>
+        <thead>${th("Blocked UPI ID","Reason","Added By","Action")}</thead>
+        <tbody>
+          ${bl.map(b=>`
+            <tr>
+              <td class="mono"><b>${esc(b.vpa)}</b></td>
+              <td>${esc(b.reason)}</td>
+              <td class="mut sm">${esc(b.added_by)}${b.ts?", "+dt(b.ts):""}</td>
+              <td>${b.builtin?`<span class="pill grey">built in</span>`:`<button class="btn ghost sm bad" data-act="blDel" data-v="${esc(b.vpa)}">Remove</button>`}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h3>Add Receiver to Blacklist</h3>
+      <p class="s">Any transaction directed to a blacklisted UPI ID will be blocked immediately with a 100 risk score.</p>
+      <label for="bl_v">Receiver UPI ID</label><input id="bl_v" placeholder="fraudster@bank">
+      <label for="bl_r">Reason for Blacklisting</label><input id="bl_r" placeholder="Reported for phishing / scam">
+      <button class="btn bad" style="margin-top:12px" data-act="blAdd">Blacklist UPI ID</button>
+      <p class="err" id="blErr"></p>
+      <p class="mut sm" style="margin-top:12px">Automatic Rule: 3 independent customer fraud reports on the same UPI ID automatically add it to the blacklist.</p>
+    </div>
+  </div>`);
+};
+
+/* ---------- Event Delegation Actions ---------- */
+const ACT={
+  authTab:(d,b)=>{
+    document.querySelectorAll(".seg button").forEach(x=>x.classList.toggle("on",x===b));
+    $("fLogin").hidden=d.t!=="login";
+    $("fReg").hidden=d.t!=="reg";
+  },
+  demoLogin:async d=>{
+    S.demoPw=d.p;$("l_id").value=d.u;$("l_pw").value=d.p;
+    document.querySelector('[data-t=login]').click();
+    $("fLogin").requestSubmit();
+  },
+  go:d=>{
+    if(location.hash==="#/"+d.p)route();
+    else location.hash="#/"+d.p;
+  },
+  menu:()=>{
+    const side=$("side"),bk=$("drawerBackdrop");
+    const open=!side.classList.contains("open");
+    side.classList.toggle("open",open);
+    bk.classList.toggle("open",open);
+  },
+  closeMenu:()=>{
+    $("side").classList.remove("open");
+    $("drawerBackdrop").classList.remove("open");
+  },
+  logout:()=>logout(),
+  bell:async()=>{
+    const n=$("notes");
+    if(!n.hidden){n.hidden=true;return}
+    const j=await api("/me/notifications");
+    n.hidden=false;
+    n.innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:6px">
+      <h3>Notifications</h3>
+      <button class="btn ghost sm" data-act="readAll">Mark all read</button>
+    </div>
+    ${j.items.length?j.items.map(x=>`<div class="note ${esc(x.level)} ${x.read?"":"unread"}"><i></i><div><b>${esc(x.title)}</b><small>${esc(x.body)}</small><small>${dt(x.ts)}</small></div></div>`).join(""):`<div class="empty"><b>All quiet</b>No unread alerts.</div>`}`;
+  },
+  readAll:async()=>{
+    await api("/me/notifications/read",{});
+    S.unread=0;paintBell();$("notes").hidden=true;
+  },
+  scenario:d=>{
+    fillPay(SC[d.i][2]);
+    $("p_go").click();
+  },
+  pay:async(d,b)=>busy(b,doPay),
+  otp:async(d,b)=>busy(b,async()=>{
+    try{
+      const r=await api("/verify-otp",{tx_id:d.tx,otp:$("otp").value});
+      $("otpOut").style.color=r.verified?"var(--go)":"var(--stop)";
+      $("otpOut").textContent=r.message;
+      if(r.verified||r.status!=="PENDING_VERIFICATION")$("otp").disabled=true;
+    }catch(x){
+      $("otpOut").style.color="var(--stop)";$("otpOut").textContent=x.message;
+    }
+  }),
+  report:async(d,b)=>busy(b,async()=>{
+    try{
+      const r=await api("/report-fraud",{tx_id:d.tx});
+      toast("Fraud Reported",r.auto_blacklisted?"Receiver is now blacklisted for all users.":`${r.total_reports} report(s) on this receiver.`,"ok");
+    }catch(x){toast("Report Failed",x.message,"bad")}
+  }),
+  qrMode:d=>{
+    const isImg=d.m==="img";
+    $("qrTabImg").classList.toggle("on",isImg);
+    $("qrTabText").classList.toggle("on",!isImg);
+    $("qrSecImg").hidden=!isImg;
+    $("qrSecText").hidden=isImg;
+  },
+  scanQr:async(d,b)=>busy(b,async()=>{
+    $("q_out").innerHTML='<p class="mut">Analyzing QR code...</p>';
+    const isTextMode=$("qrSecText")&&!$("qrSecText").hidden;
+    const rawText=$("q_raw_text")?.value.trim();
+    const amtVal=$("q_amt")?.value?Number($("q_amt").value):null;
+    const vpaVal=$("q_vpa")?.value?$("q_vpa").value.trim():null;
+
+    if(isTextMode||(rawText&&!$("q_file")?.files?.[0])){
+      if(!rawText){$("q_out").innerHTML='<p class="err">Please enter a QR string.</p>';return}
+      try{
+        const r=await api("/scan-qr-text",{payload:rawText,amount:amtVal,entered_vpa:vpaVal});
+        renderQrOutput(r,rawText);
+      }catch(x){$("q_out").innerHTML=`<p class="err">${esc(x.message)}</p>`}
+      return;
+    }
+
+    const f=$("q_file")?.files?.[0];
+    const fd=new FormData();
+    if(f){
+      fd.append("file",f);
+    }else if(S.genQrBlob){
+      fd.append("file",S.genQrBlob,"test_qr.png");
+    }else if($("q_img")&&$("q_img").src&&$("q_img").style.display!=="none"){
+      try{
+        const resp=await fetch($("q_img").src);
+        const blob=await resp.blob();
+        fd.append("file",blob,"generated_qr.png");
+      }catch(e){
+        $("q_out").innerHTML='<p class="err">Could not retrieve generated QR. Choose an image file.</p>';
+        return;
+      }
+    }else{
+      $("q_out").innerHTML='<p class="err">Please choose a QR image or enter QR text.</p>';
+      return;
+    }
+
+    if(amtVal!==null)fd.append("amount",amtVal);
+    if(vpaVal)fd.append("entered_vpa",vpaVal);
+
+    try{
+      const r=await api("/scan-qr-image",fd);
+      renderQrOutput(r,r.decoded);
+    }catch(x){
+      $("q_out").innerHTML=`<div style="padding:12px;background:var(--stop-b);border:1px solid var(--stop);border-radius:8px;color:var(--stop)"><b>Scan Failed:</b> ${esc(x.message)}</div>`;
+    }
+  }),
+  mkQr:async()=>{
+    const val=$("q_mk").value.trim();
+    if(!val){toast("Error","QR text cannot be empty","bad");return}
+    try{
+      const resp=await fetch("/api/qr/generate?text="+encodeURIComponent(val));
+      if(!resp.ok)throw new Error("Failed to generate QR");
+      const blob=await resp.blob();
+      S.genQrBlob=blob;
+      $("q_img").src=URL.createObjectURL(blob);
+      $("q_img").style.display="block";
+      $("btnTestGenQr").style.display="inline-flex";
+      toast("QR Generated","Ready for scanner test","ok");
+    }catch(e){toast("Error",e.message,"bad")}
+  },
+  useGenQr:()=>{
+    const img=$("q_img");
+    if(!img||!img.src||img.style.display==="none")return;
+    $("q_preview").src=img.src;
+    $("q_preview_box").style.display="block";
+    document.querySelector('[data-act="qrMode"][data-m="img"]')?.click();
+    toast("Loaded into Scanner","Analyzing image...","ok");
+    document.querySelector('[data-act="scanQr"]')?.click();
+  },
+  loadSampleQr:d=>{
+    const SAMPLES={
+      clean:"upi://pay?pa=chaiwala@oksbi&pn=Sharma%20Chai%20Point&am=40&cu=INR",
+      tamper:"upi://pay?pa=chaiwala@oksbi&pn=Sharma%20Chai%20Point&am=40&cu=INR",
+      collect:"upi://collect?pa=scammer@ybl&am=5000",
+      bl:"upi://pay?pa=refund.helpdesk@ybl&pn=Helpdesk%20Refund&am=1000"
+    };
+    $("q_mk").value=SAMPLES[d.k]||"";
+    if(d.k==="tamper"){$("q_amt").value="4000"}else{$("q_amt").value=""}
+    document.querySelector('[data-act="mkQr"]')?.click();
+  },
+  scanMsg:async(d,b)=>busy(b,async()=>{
+    try{
+      const r=await api("/scan-message",{text:$("m_txt").value});
+      const c=r.risk>=.7?"stop":r.risk>=.35?"hold":"go";
+      $("m_out").innerHTML=`<div>
+        <span class="pill ${c}">${esc(r.verdict.toUpperCase())}</span> <span class="mut sm">Risk: <b>${Math.round(r.risk*100)}/100</b></span>
+        ${whyList(r.reasons)}
+      </div>`;
+    }catch(x){$("m_out").innerHTML=`<p class="err">${esc(x.message)}</p>`}
+  }),
+  msgEx:()=>{
+    $("m_txt").value="Dear customer, your bank KYC will expire today. Update immediately to prevent account blockage. Click http://sbi-kyc-verify.icu/update and share OTP.";
+    document.querySelector('[data-act="scanMsg"]')?.click();
+  },
+  scanUrl:async(d,b)=>busy(b,async()=>{
+    try{
+      const r=await api("/scan-url",{url:$("u_in").value});
+      const c=r.risk>=.6?"stop":r.risk>=.3?"hold":"go";
+      $("u_out").innerHTML=`<div>
+        <span class="pill ${c}">${esc(r.verdict.toUpperCase())}</span> <span class="mut sm">Risk: <b>${Math.round(r.risk*100)}/100</b></span>
+        <div class="mono sm" style="margin:6px 0">${esc(r.host||"")}</div>
+        ${whyList(r.reasons)}
+      </div>`;
+    }catch(x){$("u_out").innerHTML=`<p class="err">${esc(x.message)}</p>`}
+  }),
+  urlExBad:()=>{
+    $("u_in").value="http://paytm-kyc-update.xyz/verify?otp=1";
+    document.querySelector('[data-act="scanUrl"]')?.click();
+  },
+  urlExGood:()=>{
+    $("u_in").value="https://www.phonepe.com";
+    document.querySelector('[data-act="scanUrl"]')?.click();
+  },
+  netPreset:d=>{
+    $("n_type").value=d.t;
+    $("n_vpn").checked=d.v==="1";
+    $("n_tls").checked=d.tls==="1";
+    $("n_ip").value=d.ip||"";
+    document.querySelector('[data-act="runNetCheck"]')?.click();
+  },
+  runNetCheck:async(d,b)=>busy(b,async()=>{
+    const body={type:$("n_type").value,ip:$("n_ip").value.trim()||undefined,vpn:$("n_vpn").checked,tls_ok:$("n_tls").checked};
+    try{
+      const r=await api("/network-check",body);
+      const c=r.risk>=.6?"stop":r.risk>=.3?"hold":"go";
+      const statusText=r.risk>=.6?"High Risk (Unsafe)":r.risk>=.3?"Moderate Risk (Caution)":"Safe Connection";
+      $("netRes").innerHTML=`<div class="rc">
+        <div class="stamp ${c}">${statusText}</div>
+        <div class="score">${Math.round(r.risk*100)}<small> / 100 Network Risk</small></div>
+        <div style="margin:12px 0 6px">
+          <div>Network Type: <b>${esc(r.net_type.replaceAll("_"," "))}</b></div>
+          <div>VPN Detected: <b>${body.vpn?"Yes":"No"}</b> &bull; TLS Handshake: <b>${body.tls_ok?"Verified":"Insecure"}</b></div>
+        </div>
+        ${whyList(r.reasons)}
+        <div style="margin-top:14px;padding:10px;background:var(--p2);border-radius:8px;font-size:13px">
+          <b>Recommendation:</b> ${r.risk>=.6?"Do NOT proceed with high-value UPI payments on this network. Switch to mobile data or secure Wi-Fi.":r.risk>=.3?"Proceed with caution. Ensure 2-factor authentication is active.":"Network is safe for UPI payments."}
+        </div>
+      </div>`;
+    }catch(x){$("netRes").innerHTML=`<p class="err">${esc(x.message)}</p>`}
+  }),
+  histOpen:d=>{
+    const el=$("hd"+d.i);
+    if(el)el.hidden=!el.hidden;
+  },
+  freezeToggle:async(d,b)=>{
+    const newState=b.tagName==="BUTTON"?!$("sFreeze")?.checked:b.checked;
+    try{
+      await api("/me/freeze",{value:newState});
+      toast(newState?"Account Frozen":"Account Unfrozen","",newState?"bad":"ok");
+      const sf=$("sFreeze"),df=$("dFreeze");
+      if(sf)sf.checked=newState;if(df)df.checked=newState;
+      const bnr=$("dashFrozenBanner");if(bnr)bnr.style.display=newState?"block":"none";
+      const t=$("fzTxt");if(t)t.textContent=newState?"Status: FROZEN (All payments blocked)":"Status: OFF (Normal payments enabled)";
+      const dt=$("dFzTxt");if(dt)dt.textContent=newState?"Status: FROZEN":"Status: Normal";
+    }catch(x){if(b.tagName==="INPUT")b.checked=!b.checked;toast("Failed",x.message,"bad")}
+  },
+  saveLimit:async()=>{$("limErr").textContent="";try{await api("/me/limit",{daily_limit:Number($("lim").value)});toast("Daily Limit Saved",inr($("lim").value),"ok")}catch(x){$("limErr").textContent=x.message}},
+  rmDev:async d=>{try{await api("/me/devices/"+d.id,undefined,"DELETE");toast("Device Removed","","ok");PAGES.sec()}catch(x){toast("Failed",x.message,"bad")}},
+  trustDev:async()=>{$("tdErr").textContent="";try{await api("/me/devices",{device_id:devId(),sim_serial:simId(),label:$("td_label").value||"This Browser",password:$("td_pw").value});toast("Browser Trusted Successfully","","ok");PAGES.sec()}catch(x){$("tdErr").textContent=x.message}},
+  chgPw:async()=>{$("cpErr").textContent="";try{await api("/auth/change-password",{old_password:$("cp_old").value,new_password:$("cp_new").value});toast("Password Changed Successfully","","ok");$("cp_old").value=$("cp_new").value=""}catch(x){$("cpErr").textContent=x.message}},
+  tamper:async()=>{const r=await api("/admin/demo/tamper",{});toast("Block Altered (Demo)",`Block #${r.tampered_block} modified - chain now fails verification.`,"warn");(PAGES.a_ledger||PAGES.ledger)()},
+  resetDemo:async()=>{if(!confirm("Reset demo payments and restore verified chain state?"))return;await api("/admin/demo/reset",{});toast("Demo Data Reset","Chain restored intact.","ok");(PAGES.a_ledger||PAGES.ledger)()},
+  uStatus:async(d,b)=>busy(b,async()=>{try{const act=d.active==="1";await api("/admin/users/"+d.id+"/status",{value:act});toast("User Updated",`Account ${act?"activated":"deactivated"}.`,"ok");PAGES.a_users()}catch(x){toast("Action Failed",x.message,"bad")}}),
+  uAct:async d=>{try{const p="/admin/users/"+d.id+"/"+d.k;await api(p,d.k==="role"?{role:d.v}:d.k==="unlock"?{}:{value:d.v==="1"});toast("Updated","","ok");PAGES.a_users()}catch(x){toast("Action Failed",x.message,"bad")}},
+  txFilter:()=>{S.txQuery=$("txSearch")?.value.trim()||"";S.txDec=$("txDec")?.value||"";S.txStat=$("txStat")?.value||"";PAGES.a_tx()},
+  txReset:()=>{S.txQuery="";S.txDec="";S.txStat="";PAGES.a_tx()},
+  txDetail:d=>{const el=$("txd_"+d.i);if(el)el.hidden=!el.hidden},
+  alertFilter:d=>{if(d.s)S.alertStatus=d.s;if(d.v)S.alertSev=d.v;PAGES.a_alerts()},
+  reviewAlert:async(d,b)=>busy(b,async()=>{try{await api("/admin/review",{tx_id:d.tx,verdict:d.v});toast("Alert Reviewed",`Marked as ${d.v}.`,"ok");PAGES.a_alerts()}catch(x){toast("Review Failed",x.message,"bad")}}),
+  saveRules:async()=>{$("sErr").textContent="";try{await api("/admin/settings",{thresh_verify:Number($("s_v").value),thresh_block:Number($("s_b").value),high_amount:Number($("s_h").value)});S.thr={verify:Number($("s_v").value),block:Number($("s_b").value)};toast("Rules Saved","New threshold gates applied.","ok")}catch(x){$("sErr").textContent=x.message}},
+  retrain:async(d,b)=>{try{const r=await api("/admin/retrain",{});toast("Retraining Started",`Using ${r.feedback_rows} feedback rows.`,"ok");b.disabled=true;$("rtMsg").textContent="training...";const poll=async()=>{const m=await api("/admin/model");if(m.training.running){later(poll,2000)}else{PAGES.a_ai()}};later(poll,2000)}catch(x){toast("Failed",x.message,"bad")}},
+  verifyLedgerAction:async(d,b)=>busy(b,async()=>{try{const res=await api("/admin/ledger/verify",undefined,"POST");toast("Ledger Verified",res.valid?`All ${res.length} blocks intact.`:`Broken at block #${res.broken_at}!`,res.valid?"ok":"bad");PAGES.a_ledger()}catch(x){toast("Failed",x.message,"bad")}}),
+  verifyLedger:async(d,b)=>busy(b,async()=>{try{const res=await api("/admin/ledger/verify",undefined,"POST");toast("Ledger Verified",res.valid?`All ${res.length} blocks intact.`:`Broken at block #${res.broken_at}!`,res.valid?"ok":"bad");PAGES.admin()}catch(x){toast("Failed",x.message,"bad")}}),
+  auditFilter:()=>{S.auditSearch=$("auditSearch")?.value.trim()||"";S.auditAct=$("auditAct")?.value||"";PAGES.a_audit()},
+  auditReset:()=>{S.auditSearch="";S.auditAct="";PAGES.a_audit()},
+  blAdd:async()=>{$("blErr").textContent="";try{await api("/admin/blacklist",{vpa:$("bl_v").value,reason:$("bl_r").value});toast("Added to Blacklist","","ok");PAGES.a_bl()}catch(x){$("blErr").textContent=x.message}},
+  blDel:async d=>{try{await api("/admin/blacklist/"+encodeURIComponent(d.v),undefined,"DELETE");toast("Removed from Blacklist","","ok");PAGES.a_bl()}catch(x){toast("Failed",x.message,"bad")}},
+  selScenario:d=>{
+    S.lab.curr=d.id;S.lab.sim=null;
+    document.querySelectorAll(".sc-card").forEach(c=>c.classList.toggle("active",c.dataset.id===d.id));
+    const sc=S.lab.scenarios.find(s=>s.id===d.id);
+    const c=$("labResultContainer");
+    if(c&&sc)c.innerHTML=`<div class="card" style="text-align:center;padding:40px 20px;border-style:dashed;border-color:var(--line2)">
+      <div style="font-size:36px;margin-bottom:8px">🛡️</div>
+      <h3 style="font-size:20px">Selected: ${esc(sc.name)}</h3>
+      <p class="mut" style="max-width:500px;margin:8px auto 16px">Click <b>"Run Attack Replay Simulation"</b> to test the 5-layer pipeline against this vector.</p>
+      <button class="btn" data-act="runLabSim">${ic("play")} Execute Replay Simulation</button>
+    </div>`;
+  },
+  runLabSim:async(d,b)=>busy(b,async()=>{
+    const sc=S.lab.scenarios.find(s=>s.id===S.lab.curr);
+    if(!sc)return;
+    try{
+      const laneBox=$("labLaneBox");
+      if(laneBox)runLane(laneBox,{label:"Simulating "+sc.name,decision:sc.expected_verdict,dur:1600});
+      const res=await api("/lab/simulate",{scenario_id:sc.id});
+      S.lab.sim=res;
+      toast("Simulation Completed",`${sc.name} -> ${WORD[res.attack?.decision]||res.attack?.decision}`,"ok");
+      const histData=await api("/lab/history",undefined,"GET").catch(()=>({history:[]}));
+      renderLabPage(histData.history||[]);
+    }catch(x){toast("Simulation Failed",x.message,"bad")}
+  }),
+  resetSim:()=>{S.lab.sim=null;PAGES.lab()},
+  labResetHistory:async()=>{
+    if(!confirm("Clear simulation history?"))return;
+    try{await api("/lab/reset",{});toast("History Cleared","","ok");PAGES.lab()}catch(x){toast("Failed",x.message,"bad")}
+  },
+  inspectHistory:async d=>{
+    try{
+      const histData=await api("/lab/history",undefined,"GET");
+      const item=histData.history?.[Number(d.i)];
+      if(!item||!item.detail)return;
+      S.lab.sim=item.detail;S.lab.curr=item.scenario_id;
+      renderLabPage(histData.history);
+      window.scrollTo({top:$("labResultContainer")?.offsetTop-40,behavior:"smooth"});
+    }catch(x){toast("Failed",x.message,"bad")}
+  }
+};
+
+function renderQrOutput(r,rawPayload){
+  const c=r.risk>=.7?"stop":r.risk>=.35?"hold":"go";
+  let parsedHtml="";
+  if(r.parsed){
+    parsedHtml=`<div style="margin:10px 0;padding:12px;background:var(--p2);border:1px solid var(--line2);border-radius:8px">
+      <div class="row" style="justify-content:space-between;margin-bottom:6px">
+        <b>Decoded Payment Data:</b>
+        ${r.verified_merchant?`<span class="pill go">Verified Merchant</span>`:""}
+      </div>
+      <div style="font-size:13px">
+        <div>Payee UPI ID: <b class="mono" style="color:var(--sig)">${esc(r.parsed.pa||"")}</b></div>
+        ${r.parsed.pn?`<div>Payee Name: <b>${esc(r.parsed.pn)}</b></div>`:""}
+        ${r.parsed.am?`<div>Preset Amount: <b>₹${esc(r.parsed.am)}</b></div>`:""}
+      </div>
+    </div>`;
+  }
+  $("q_out").innerHTML=`<div>
+    <span class="pill ${c}">${r.risk>=.7?"High Risk (Tampered / Scam)":r.risk>=.35?"Verification Needed":"Verified Genuine QR"}</span>
+    <span class="mut sm">Risk: <b>${Math.round(r.risk*100)}/100</b></span>
+    ${parsedHtml}
+    ${whyList(r.reasons)}
+    <div style="margin-top:8px"><small class="mut">Payload: </small><span class="mono sm" style="overflow-wrap:anywhere">${esc(rawPayload||r.decoded||"")}</span></div>
+  </div>`;
+}
+
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-act]");
+  if(!t){const n=$("notes");if(!n.hidden&&!n.contains(e.target))n.hidden=true;return}
+  if(t.tagName==="INPUT"&&t.type==="checkbox"&&e.type==="click")return;
+  const f=ACT[t.dataset.act];if(f&&t.dataset.act!=="freezeToggle")f(t.dataset,t);
+});
+document.addEventListener("change",e=>{const t=e.target.closest('[data-act="freezeToggle"]');if(t)ACT.freezeToggle(t.dataset,t)});
+
+/* App Initialization */
+(async()=>{
+  if(!S.token)return showAuth();
+  try{
+    const j=await api("/auth/me");
+    S.acc=j.account;
+    await enterApp();
+  }catch{
+    S.token="";delete localStorage.ups_token;showAuth();
+  }
+})();
+</script>
+</body>
+</html>
